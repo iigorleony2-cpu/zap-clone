@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V4 - Com Login</title>
+    <title>Zap Pro - Upload</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -11,11 +11,16 @@
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         /* Tela de Login */
-        #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; }
-        #login-screen input { padding: 12px; border-radius: 8px; border: none; width: 80%; max-width: 300px; margin-bottom: 10px; }
-        #login-screen button { padding: 12px 30px; border-radius: 8px; border: none; background: #25d366; color: white; font-weight: bold; cursor: pointer; }
+        #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
+        .login-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
+        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; }
+        
+        /* Estilo do Botão de Upload */
+        .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
+        #login-foto { display: none; }
+        #preview-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
 
-        /* Estrutura do App (Escondida antes do login) */
+        /* Estrutura do App */
         #app-container { display: none; width: 100%; height: 100%; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
         #sidebar-header { background: #075e54; color: white; padding: 15px; font-weight: bold; }
@@ -32,8 +37,8 @@
         .received { background: #fff; align-self: flex-start; }
         
         #form { display: flex; padding: 10px; background: #f0f0f0; }
-        input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
-        #form button { background: #075e54; color: white; border: none; padding: 0 20px; margin-left: 8px; border-radius: 25px; }
+        input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
+        #btn-enviar { background: #075e54; color: white; border: none; padding: 0 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; }
 
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; }
@@ -46,10 +51,16 @@
 <body>
 
     <div id="login-screen">
-        <h2>Zap Clone Login</h2>
-        <input type="text" id="login-nome" placeholder="Seu nome ou apelido">
-        <input type="text" id="login-foto" placeholder="Link da foto (opcional)">
-        <button onclick="fazerLogin()">Entrar no Chat</button>
+        <div class="login-box">
+            <h2>Zap Pro</h2>
+            <img id="preview-img" src="">
+            <input type="text" id="login-nome" placeholder="Seu nome">
+            
+            <label class="upload-label" for="login-foto">📸 Escolher Foto de Perfil</label>
+            <input type="file" id="login-foto" accept="image/*" onchange="previewFoto(this)">
+            
+            <button onclick="fazerLogin()" style="width: 100%; padding: 15px; border-radius: 8px; border: none; background: #075e54; color: white; font-weight: bold; cursor: pointer;">ENTRAR</button>
+        </div>
     </div>
 
     <div id="app-container">
@@ -65,7 +76,7 @@
             <ul id="messages"></ul>
             <form id="form" style="display: none;">
                 <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
-                <button type="submit">Enviar</button>
+                <button type="submit" id="btn-enviar">Enviar</button>
             </form>
         </div>
     </div>
@@ -84,9 +95,22 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let meuNome, minhaFoto, meuId, chatAtivo;
+        let meuNome, minhaFotoBase64, meuId, chatAtivo;
 
-        // Verifica se já logou antes (Memória do Navegador)
+        // Pré-visualização da foto
+        function previewFoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('preview-img');
+                    img.src = e.target.result;
+                    img.style.display = 'inline-block';
+                    minhaFotoBase64 = e.target.result; // Salva a imagem como texto
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         if(localStorage.getItem('zap_id')) {
             fazerLogin(true);
         }
@@ -94,32 +118,31 @@
         function fazerLogin(automatico = false) {
             if(!automatico) {
                 meuNome = document.getElementById('login-nome').value;
-                minhaFoto = document.getElementById('login-foto').value || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-                meuId = meuNome.toLowerCase().replace(/\s/g, ''); // Cria um ID fixo baseado no nome
+                if(!meuNome) return alert("Digite seu nome!");
+                
+                const fotoPadrao = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                minhaFotoBase64 = minhaFotoBase64 || fotoPadrao;
+                meuId = meuNome.toLowerCase().replace(/\s/g, '');
                 
                 localStorage.setItem('zap_nome', meuNome);
-                localStorage.setItem('zap_foto', minhaFoto);
+                localStorage.setItem('zap_foto', minhaFotoBase64);
                 localStorage.setItem('zap_id', meuId);
             } else {
                 meuNome = localStorage.getItem('zap_nome');
-                minhaFoto = localStorage.getItem('zap_foto');
+                minhaFotoBase64 = localStorage.getItem('zap_foto');
                 meuId = localStorage.getItem('zap_id');
             }
 
-            if(!meuId) return alert("Digite um nome!");
-
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
-
             iniciarSistema();
         }
 
         function iniciarSistema() {
             const statusRef = db.ref('status/' + meuId);
-            statusRef.set({ nome: meuNome, foto: minhaFoto, online: true });
+            statusRef.set({ nome: meuNome, foto: minhaFotoBase64, online: true });
             statusRef.onDisconnect().remove();
 
-            // Lista de Contatos
             db.ref('status').on('value', snapshot => {
                 const userList = document.getElementById('user-list');
                 userList.innerHTML = '';
@@ -158,7 +181,7 @@
             });
         }
 
-            document.getElementById('form').addEventListener('submit', e => {
+        document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
             const input = document.getElementById('input');
             if (input.value.trim() && chatAtivo) {
