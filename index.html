@@ -3,28 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zap Clone V2 - Online</title>
+    <title>Zap Pro V3</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; }
+        #sidebar { width: 300px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; border-bottom: 1px solid #ddd; text-align: center; }
+        .user-item { padding: 12px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; transition: 0.3s; }
+        .user-item:hover { background: #f5f5f5; }
+        .user-item.active { background: #ebebeb; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; object-fit: cover; background: #ccc; }
         
-        /* Barra Lateral de Contatos */
-        #sidebar { width: 250px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; border-bottom: 1px solid #ddd; }
-        #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; }
-        .user-item { padding: 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; }
-        .status-dot { width: 10px; height: 10px; background: #06d755; border-radius: 50%; margin-right: 10px; }
-
-        /* Área do Chat */
-        #chat-area { flex-grow: 1; display: flex; flex-direction: column; }
+        #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        #chat-header { background: #ededed; padding: 10px 20px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 70%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg-info { font-size: 10px; color: #666; display: block; margin-bottom: 2px; }
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 70%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        #form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        #form { display: flex; padding: 10px; background: #f0f0f0; }
         input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
         button { background: #075e54; color: white; border: none; padding: 10px 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; }
     </style>
@@ -32,13 +30,14 @@
 <body>
 
     <div id="sidebar">
-        <div id="sidebar-header">Contatos Online</div>
+        <div id="sidebar-header">Conversas</div>
         <ul id="user-list"></ul>
     </div>
 
     <div id="chat-area">
+        <div id="chat-header">Selecione um contato para conversar</div>
         <ul id="messages"></ul>
-        <form id="form">
+        <form id="form" style="display: none;">
             <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
             <button type="submit">Enviar</button>
         </form>
@@ -58,53 +57,64 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 1. Pedir nome do usuário
-        const meuNome = prompt("Como queres ser chamado no chat?") || "Anónimo";
+        const meuNome = prompt("Seu Nome:") || "Usuário";
+        const minhaFoto = prompt("Link da sua Foto (opcional):") || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
         const meuId = Math.random().toString(36).substring(7);
+        let chatAtivo = null;
 
-        // 2. Sistema de Presença (Online/Offline)
+        // Status Online
         const statusRef = db.ref('status/' + meuId);
-        statusRef.set({ nome: meuNome, online: true });
-        // Quando o utilizador fechar a aba, o Firebase remove automaticamente
+        statusRef.set({ nome: meuNome, foto: minhaFoto, online: true });
         statusRef.onDisconnect().remove();
 
-        // 3. Atualizar lista de utilizadores online
+        // Lista de Contatos
         db.ref('status').on('value', snapshot => {
             const userList = document.getElementById('user-list');
             userList.innerHTML = '';
             snapshot.forEach(child => {
-                const user = child.val();
-                const li = document.createElement('li');
-                li.className = 'user-item';
-                li.innerHTML = `<div class="status-dot"></div> ${user.nome}`;
-                userList.appendChild(li);
+                if(child.key !== meuId) {
+                    const user = child.val();
+                    const li = document.createElement('li');
+                    li.className = 'user-item';
+                    li.innerHTML = `<img src="${user.foto}" class="avatar"> <span>${user.nome}</span>`;
+                    li.onclick = () => abrirChat(child.key, user.nome);
+                    userList.appendChild(li);
+                }
             });
         });
 
-        // 4. Enviar e Receber mensagens (com Nome)
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
-        const messagesList = document.getElementById('messages');
+        function abrirChat(idDestino, nomeDestino) {
+            chatAtivo = [meuId, idDestino].sort().join('_'); // Cria uma sala única para os dois
+            document.getElementById('chat-header').innerText = "Conversando com " + nomeDestino;
+            document.getElementById('form').style.display = 'flex';
+            carregarMensagens();
+        }
 
-        form.addEventListener('submit', e => {
+        function carregarMensagens() {
+            const messagesList = document.getElementById('messages');
+            messagesList.innerHTML = '';
+            db.ref('chats/' + chatAtivo).off(); // Limpa escuta anterior
+            db.ref('chats/' + chatAtivo).limitToLast(50).on('child_added', snapshot => {
+                const msg = snapshot.val();
+                const li = document.createElement('li');
+                li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
+                li.textContent = msg.texto;
+                messagesList.appendChild(li);
+                messagesList.scrollTop = messagesList.scrollHeight;
+            });
+        }
+
+        document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
-            if (input.value.trim()) {
-                db.ref('mensagens').push({
+            const input = document.getElementById('input');
+            if (input.value.trim() && chatAtivo) {
+                db.ref('chats/' + chatAtivo).push({
                     texto: input.value,
-                    nome: meuNome,
-                    sender: meuId
+                    sender: meuId,
+                    hora: Date.now()
                 });
                 input.value = '';
             }
-        });
-
-        db.ref('mensagens').limitToLast(50).on('child_added', snapshot => {
-            const msg = snapshot.val();
-            const li = document.createElement('li');
-            li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
-            li.innerHTML = `<span class="msg-info">${msg.nome}</span>${msg.texto}`;
-            messagesList.appendChild(li);
-            messagesList.scrollTop = messagesList.scrollHeight;
         });
     </script>
 </body>
