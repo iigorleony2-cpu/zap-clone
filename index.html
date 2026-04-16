@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro Responsivo</title>
+    <title>Zap Pro V3.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -12,34 +12,32 @@
         
         /* Sidebar */
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
-        #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        #sidebar-header { background: #075e54; color: white; padding: 15px; font-weight: bold; border-bottom: 1px solid #ddd; }
         .user-item { padding: 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; }
-        .user-item:hover { background: #f5f5f5; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
 
         /* Área do Chat */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
         #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
-        .back-btn { display: none; margin-right: 10px; cursor: pointer; font-size: 20px; border: none; background: none; }
+        
+        /* Seta Voltar Super Visível */
+        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        #form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        #form { display: flex; padding: 10px; background: #f0f0f0; }
         input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
         button { background: #075e54; color: white; border: none; padding: 0 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; }
 
-        /* RESPONSIVIDADE (O SEGREDO) */
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; transition: 0.3s; }
             #chat-area { width: 100%; position: absolute; height: 100%; left: 100%; transition: 0.3s; }
-            
-            /* Quando o chat estiver ativo no celular */
             body.chat-aberto #sidebar { left: -100%; }
             body.chat-aberto #chat-area { left: 0; }
-            .back-btn { display: block; }
+            .back-btn { display: flex; }
         }
     </style>
 </head>
@@ -52,8 +50,8 @@
 
     <div id="chat-area">
         <div id="chat-header">
-            <button class="back-btn" onclick="fecharChat()">⬅</button>
-            <span id="nome-contato">Selecione alguém</span>
+            <button class="back-btn" onclick="fecharChat()">❮</button>
+            <span id="nome-contato">Selecione um contato</span>
         </div>
         <ul id="messages"></ul>
         <form id="form" style="display: none;">
@@ -75,6 +73,11 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
+        // Pedir permissão de notificação
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
 
         const meuNome = prompt("Seu Nome:") || "Usuário";
         const minhaFoto = prompt("Link da Foto:") || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -104,7 +107,7 @@
             chatAtivo = [meuId, idDestino].sort().join('_');
             document.getElementById('nome-contato').innerText = nomeDestino;
             document.getElementById('form').style.display = 'flex';
-            document.body.classList.add('chat-aberto'); // Ativa visual mobile
+            document.body.classList.add('chat-aberto');
             carregarMensagens();
         }
 
@@ -118,6 +121,12 @@
             db.ref('chats/' + chatAtivo).off();
             db.ref('chats/' + chatAtivo).limitToLast(50).on('child_added', s => {
                 const msg = s.val();
+                
+                // Lógica da Notificação
+                if (msg.sender !== meuId && document.hidden) {
+                    new Notification("Nova mensagem no Zap", { body: msg.texto });
+                }
+
                 const li = document.createElement('li');
                 li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
                 li.textContent = msg.texto;
