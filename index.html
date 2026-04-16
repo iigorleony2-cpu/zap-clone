@@ -3,29 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Zap Clone</title>
+    <title>Zap Clone V2 - Online</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; }
+        
+        /* Barra Lateral de Contatos */
+        #sidebar { width: 250px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; border-bottom: 1px solid #ddd; }
+        #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; }
+        .user-item { padding: 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; }
+        .status-dot { width: 10px; height: 10px; background: #06d755; border-radius: 50%; margin-right: 10px; }
+
+        /* Área do Chat */
+        #chat-area { flex-grow: 1; display: flex; flex-direction: column; }
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 70%; word-wrap: break-word; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 70%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg-info { font-size: 10px; color: #666; display: block; margin-bottom: 2px; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
-        #form { display: flex; padding: 10px; background: #f0f0f0; align-items: center; }
-        input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
-        button { background: #075e54; color: white; border: none; padding: 10px 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; font-weight: bold; }
+        
+        #form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
+        button { background: #075e54; color: white; border: none; padding: 10px 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <ul id="messages"></ul>
-    <form id="form">
-        <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
-        <button type="submit">Enviar</button>
-    </form>
+
+    <div id="sidebar">
+        <div id="sidebar-header">Contatos Online</div>
+        <ul id="user-list"></ul>
+    </div>
+
+    <div id="chat-area">
+        <ul id="messages"></ul>
+        <form id="form">
+            <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
 
     <script>
-        // Suas chaves que você me enviou
         const firebaseConfig = {
             apiKey: "AIzaSyCcaX5fOlNx6OGdcGfTkFZ3UxnYS_uM9rU",
             authDomain: "meu-zap-clone.firebaseapp.com",
@@ -36,36 +55,56 @@
             appId: "1:972529173490:web:b8444d778ebe5ed897216b"
         };
 
-        // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const myId = Math.random().toString(36).substring(7); // Identificador pra saber que a msg é sua
 
+        // 1. Pedir nome do usuário
+        const meuNome = prompt("Como queres ser chamado no chat?") || "Anónimo";
+        const meuId = Math.random().toString(36).substring(7);
+
+        // 2. Sistema de Presença (Online/Offline)
+        const statusRef = db.ref('status/' + meuId);
+        statusRef.set({ nome: meuNome, online: true });
+        // Quando o utilizador fechar a aba, o Firebase remove automaticamente
+        statusRef.onDisconnect().remove();
+
+        // 3. Atualizar lista de utilizadores online
+        db.ref('status').on('value', snapshot => {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+            snapshot.forEach(child => {
+                const user = child.val();
+                const li = document.createElement('li');
+                li.className = 'user-item';
+                li.innerHTML = `<div class="status-dot"></div> ${user.nome}`;
+                userList.appendChild(li);
+            });
+        });
+
+        // 4. Enviar e Receber mensagens (com Nome)
         const form = document.getElementById('form');
         const input = document.getElementById('input');
         const messagesList = document.getElementById('messages');
 
-        // Enviar mensagem
         form.addEventListener('submit', e => {
             e.preventDefault();
             if (input.value.trim()) {
                 db.ref('mensagens').push({
                     texto: input.value,
-                    sender: myId,
-                    hora: Date.now()
+                    nome: meuNome,
+                    sender: meuId
                 });
                 input.value = '';
             }
         });
 
-        // Mostrar mensagens na tela
         db.ref('mensagens').limitToLast(50).on('child_added', snapshot => {
             const msg = snapshot.val();
             const li = document.createElement('li');
-            li.textContent = msg.texto;
-            li.className = 'msg ' + (msg.sender === myId ? 'sent' : 'received');
+            li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
+            li.innerHTML = `<span class="msg-info">${msg.nome}</span>${msg.texto}`;
             messagesList.appendChild(li);
-            messagesList.scrollTop = messagesList.scrollHeight; // Auto-scroll
+            messagesList.scrollTop = messagesList.scrollHeight;
         });
     </script>
 </body>
