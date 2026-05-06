@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro - Versão Final</title>
+    <title>Zap Pro V4.5</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
@@ -14,42 +14,38 @@
         /* TELA DE LOGIN */
         #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
         .login-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        #login-screen h2 { margin-top: 0; }
         #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; outline: none; }
-        .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
-        .upload-label:hover { background: #1ebd59; }
+        .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
         #login-foto { display: none; }
         #preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
 
-        /* ESTRUTURA PRINCIPAL */
+        /* ESTRUTURA DO APP */
         #app-container { display: none; width: 100%; height: 100%; }
         
-        /* BARRA LATERAL */
+        /* BARRA LATERAL (CONTATOS) */
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
-        #sidebar-header { background: #075e54; color: white; padding: 15px; font-weight: bold; font-size: 18px; }
+        #sidebar-header { background: #ededed; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #ddd; height: 60px; display: flex; align-items: center; color: #333; }
         #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
-        .user-item { padding: 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; }
         .user-item:hover { background: #f5f5f5; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
 
-        /* ÁREA DE CHAT */
+        /* ÁREA DO CHAT */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
-        #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; color: #333; }
-        
-        /* BOTÃO VOLTAR (MOBILE) */
-        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; line-height: 1; }
+        #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
+        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); font-size: 15px; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        /* CAMPO DE ENTRADA */
+        /* FORMULÁRIO DE ENVIO */
         #form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
         #btn-enviar { background: #075e54; color: white; border: none; padding: 0 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; font-weight: bold; }
 
-        /* RESPONSIVIDADE */
+        /* MOBILE RESPONSIVO */
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; transition: 0.3s; }
             #chat-area { width: 100%; position: absolute; height: 100%; left: 100%; transition: 0.3s; }
@@ -64,18 +60,18 @@
     <!-- TELA DE LOGIN -->
     <div id="login-screen">
         <div class="login-box">
-            <h2>Zap Pro</h2>
+            <h2>Bem-vindo ao Zap</h2>
             <img id="preview-img" src="">
-            <input type="text" id="login-nome" placeholder="Seu nome ou apelido">
+            <input type="text" id="login-nome" placeholder="Seu nome">
             
             <label class="upload-label" for="login-foto">📸 Escolher Foto de Perfil</label>
             <input type="file" id="login-foto" accept="image/*" onchange="previewFoto(this)">
             
-            <button onclick="fazerLogin()" style="width: 100%; padding: 15px; border-radius: 8px; border: none; background: #075e54; color: white; font-weight: bold; cursor: pointer;">ENTRAR</button>
+            <button onclick="fazerLogin()" style="width: 100%; padding: 15px; border-radius: 8px; border: none; background: #25d366; color: white; font-weight: bold; cursor: pointer;">ENTRAR NO CHAT</button>
         </div>
     </div>
 
-    <!-- APP PRINCIPAL -->
+    <!-- CONTAINER PRINCIPAL -->
     <div id="app-container">
         <div id="sidebar">
             <div id="sidebar-header">Conversas</div>
@@ -95,7 +91,7 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO SEU FIREBASE
+        // CONFIGURAÇÕES FIREBASE (As suas chaves já estão aqui)
         const firebaseConfig = {
             apiKey: "AIzaSyCcaX5fOlNx6OGdcGfTkFZ3UxnYS_uM9rU",
             authDomain: "meu-zap-clone.firebaseapp.com",
@@ -111,12 +107,7 @@
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo;
 
-        // Pedir permissão de notificação
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
-
-        // Função para mostrar a foto antes de logar
+        // Pré-visualização da Foto
         function previewFoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -130,7 +121,7 @@
             }
         }
 
-        // Tentar login automático se já existir no navegador
+        // Tentar Login Automático
         if(localStorage.getItem('zap_id')) {
             fazerLogin(true);
         }
@@ -138,7 +129,7 @@
         function fazerLogin(automatico = false) {
             if(!automatico) {
                 meuNome = document.getElementById('login-nome').value.trim();
-                if(!meuNome) return alert("Por favor, digite seu nome!");
+                if(!meuNome) return alert("Digite seu nome!");
                 
                 const fotoPadrao = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
                 minhaFotoBase64 = minhaFotoBase64 || fotoPadrao;
@@ -159,12 +150,12 @@
         }
 
         function iniciarSistema() {
-            // Define status online
+            // Status Online
             const statusRef = db.ref('status/' + meuId);
             statusRef.set({ nome: meuNome, foto: minhaFotoBase64, online: true });
             statusRef.onDisconnect().remove();
 
-            // Monitorar usuários online
+            // Lista de Contatos Online
             db.ref('status').on('value', snapshot => {
                 const userList = document.getElementById('user-list');
                 userList.innerHTML = '';
@@ -195,12 +186,6 @@
             db.ref('chats/' + chatAtivo).off();
             db.ref('chats/' + chatAtivo).on('child_added', s => {
                 const msg = s.val();
-                
-                // Notificação se a aba estiver escondida
-                if (msg.sender !== meuId && document.hidden) {
-                    new Notification("Nova mensagem de " + meuNome, { body: msg.texto });
-                }
-
                 const li = document.createElement('li');
                 li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
                 li.textContent = msg.texto;
@@ -217,7 +202,7 @@
                 db.ref('chats/' + chatAtivo).push({
                     texto: input.value,
                     sender: meuId,
-                    timestamp: Date.now()
+                    time: Date.now()
                 });
                 input.value = '';
             }
