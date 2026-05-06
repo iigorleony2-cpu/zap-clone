@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V27.0 - Configurações</title>
+    <title>Zap Pro V27.1 - Realtime Update</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
-        :root { --chat-font-size: 15px; } /* Variável para controlar a fonte */
-
+        :root { --chat-font-size: 15px; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; width: 100vw; overflow: hidden; }
         
@@ -17,18 +16,14 @@
         .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
         #login-screen input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; width: 100%; }
         
-        /* PAINEL DE CONFIGURAÇÕES */
-        #settings-panel { 
-            position: absolute; left: -100%; top: 0; width: 100%; height: 100%; 
-            background: #f0f2f5; z-index: 500; transition: 0.3s ease; 
-            display: flex; flex-direction: column; 
-        }
+        /* PAINEL CONFIGS */
+        #settings-panel { position: absolute; left: -100%; top: 0; width: 100%; height: 100%; background: #f0f2f5; z-index: 500; transition: 0.3s ease; display: flex; flex-direction: column; }
         #settings-panel.open { left: 0; }
         .settings-header { background: #008069; color: white; padding: 20px; display: flex; align-items: center; gap: 20px; font-size: 18px; }
         .settings-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
         .settings-group { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .settings-group label { display: block; font-size: 13px; color: #008069; margin-bottom: 8px; font-weight: bold; }
-        .settings-group input[type="text"], .settings-group input[type="range"] { width: 100%; border: none; border-bottom: 2px solid #eee; padding: 8px 0; font-size: 16px; }
+        .settings-group input[type="text"] { width: 100%; border: none; border-bottom: 2px solid #eee; padding: 8px 0; font-size: 16px; }
 
         /* SIDEBAR */
         #sidebar { width: 30%; min-width: 300px; max-width: 450px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; height: 100%; position: relative; }
@@ -42,8 +37,9 @@
         .online { background: #25d366; }
         .offline { background: #bbb; }
         .unread-badge { background: #007bff; color: white; min-width: 20px; height: 20px; border-radius: 50%; font-size: 11px; display: none; align-items: center; justify-content: center; margin-left: auto; font-weight: bold; padding: 0 5px; }
+        .device-info { font-size: 11px; color: #888; font-weight: normal; margin-left: 5px; font-style: italic; }
 
-        /* CHAT AREA */
+        /* CHAT */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; z-index: 20; height: 100%; }
         #chat-header { background: #ededed; padding: 0 10px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
         .back-btn { background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; }
@@ -69,7 +65,6 @@
 </head>
 <body>
 
-    <!-- LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>Zap Pro</h2>
@@ -82,13 +77,11 @@
     </div>
 
     <div id="app-container">
-        <!-- SIDEBAR -->
         <div id="sidebar">
-            <!-- PAINEL CONFIGS -->
             <div id="settings-panel">
                 <div class="settings-header">
                     <span style="cursor:pointer;" onclick="toggleSettings()">❮</span>
-                    <span>Configurações</span>
+                    <span>Perfil</span>
                 </div>
                 <div class="settings-body">
                     <div class="settings-group" style="text-align:center;">
@@ -101,10 +94,10 @@
                         <input type="text" id="settings-nome">
                     </div>
                     <div class="settings-group">
-                        <label>Tamanho da Fonte: <span id="font-val">15px</span></label>
+                        <label>Fonte do Chat: <span id="font-val">15px</span></label>
                         <input type="range" id="settings-font" min="12" max="25" value="15" oninput="alterarFonte(this.value)">
                     </div>
-                    <button onclick="salvarConfiguracoes()" style="background:#25d366; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR ALTERAÇÕES</button>
+                    <button onclick="salvarConfiguracoes()" style="background:#25d366; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR</button>
                 </div>
             </div>
 
@@ -115,7 +108,6 @@
             <ul id="user-list" onclick="detectarToque(event)"></ul>
         </div>
 
-        <!-- CHAT -->
         <div id="chat-area">
             <div id="chat-header">
                 <div class="header-left">
@@ -169,13 +161,11 @@
                 localStorage.setItem('zap_nome', meuNome);
                 localStorage.setItem('zap_foto', minhaFotoBase64);
                 localStorage.setItem('zap_id', meuId);
-                localStorage.setItem('zap_font', "15");
             } else {
                 meuNome = localStorage.getItem('zap_nome');
                 minhaFotoBase64 = localStorage.getItem('zap_foto');
                 meuId = localStorage.getItem('zap_id');
-                const savedFont = localStorage.getItem('zap_font') || "15";
-                alterarFonte(savedFont);
+                alterarFonte(localStorage.getItem('zap_font') || "15");
             }
             db.ref('usuarios/' + meuId).update({ nome: meuNome, foto: minhaFotoBase64, dispositivo: detectarDispositivo() });
             db.ref('status/' + meuId).set('online');
@@ -183,6 +173,75 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             iniciarSistema();
+        }
+
+        function iniciarSistema() {
+            db.ref('usuarios').on('value', snapshot => {
+                const userList = document.getElementById('user-list');
+                userList.innerHTML = '';
+                snapshot.forEach(child => {
+                    if(child.key !== meuId) {
+                        const user = child.val();
+                        const li = document.createElement('li');
+                        li.className = 'user-item'; li.id = "user-" + child.key;
+                        li.dataset.id = child.key; li.dataset.nome = user.nome;
+                        li.innerHTML = `
+                            <div class="avatar-container">
+                                <img id="img-${child.key}" src="${user.foto}" class="avatar">
+                                <div id="dot-${child.key}" class="status-dot offline"></div>
+                            </div>
+                            <div style="display:flex; flex-direction:column; flex-grow:1;">
+                                <div style="display:flex; align-items:center;">
+                                    <span id="name-${child.key}" style="font-weight:bold;">${user.nome}</span>
+                                    <span id="device-${child.key}" class="device-info">(${user.dispositivo || 'PC'})</span>
+                                </div>
+                            </div>
+                            <div id="unread-${child.key}" class="unread-badge">0</div>
+                        `;
+                        userList.appendChild(li);
+
+                        // ESCUTAR ALTERAÇÕES DE NOME, FOTO E DISPOSITIVO EM TEMPO REAL
+                        db.ref('usuarios/' + child.key).on('value', uSnap => {
+                            const data = uSnap.val();
+                            const nameEl = document.getElementById('name-' + child.key);
+                            const imgEl = document.getElementById('img-' + child.key);
+                            const devEl = document.getElementById('device-' + child.key);
+                            if(nameEl) nameEl.innerText = data.nome;
+                            if(imgEl) imgEl.src = data.foto;
+                            if(devEl) devEl.innerText = `(${data.dispositivo || 'PC'})`;
+                            // Atualiza o dataset para o chat abrir com o nome novo
+                            const item = document.getElementById('user-' + child.key);
+                            if(item) item.dataset.nome = data.nome;
+                        });
+
+                        db.ref('status/' + child.key).on('value', s => {
+                            const dot = document.getElementById('dot-'+child.key);
+                            if(dot) dot.className = 'status-dot ' + (s.val()==='online'?'online':'offline');
+                        });
+
+                        const cp = [meuId, child.key].sort().join('_');
+                        db.ref('chats/' + cp).on('value', s => {
+                            let c = 0; s.forEach(m => { if(m.val().sender !== meuId && (!m.val().lido_por || !m.val().lido_por[meuId])) c++; });
+                            const b = document.getElementById('unread-' + child.key); if(b) { b.innerText = c; b.style.display = c > 0 ? 'flex' : 'none'; }
+                        });
+                    }
+                });
+            });
+        }
+
+        function salvarConfiguracoes() {
+            const novoNome = document.getElementById('settings-nome').value.trim();
+            if(novoNome) {
+                meuNome = novoNome;
+                minhaFotoBase64 = document.getElementById('settings-preview-img').src;
+                localStorage.setItem('zap_nome', meuNome);
+                localStorage.setItem('zap_foto', minhaFotoBase64);
+                // Atualiza no Firebase: Isso dispara o evento para todos os outros usuários
+                db.ref('usuarios/' + meuId).update({ nome: meuNome, foto: minhaFotoBase64 }).then(() => {
+                    alert("Perfil atualizado com sucesso!");
+                    toggleSettings();
+                });
+            }
         }
 
         function toggleSettings() {
@@ -201,51 +260,16 @@
             localStorage.setItem('zap_font', v);
         }
 
-        function salvarConfiguracoes() {
-            const novoNome = document.getElementById('settings-nome').value.trim();
-            if(novoNome) {
-                meuNome = novoNome;
-                minhaFotoBase64 = document.getElementById('settings-preview-img').src;
-                localStorage.setItem('zap_nome', meuNome);
-                localStorage.setItem('zap_foto', minhaFotoBase64);
-                db.ref('usuarios/' + meuId).update({ nome: meuNome, foto: minhaFotoBase64 });
-                alert("Perfil atualizado!");
-                toggleSettings();
-            }
-        }
-
         function previewFoto(input, imgId) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = e => { 
                     document.getElementById(imgId).src = e.target.result; 
                     document.getElementById(imgId).style.display = 'block'; 
-                    if(imgId === 'preview-img') minhaFotoBase64 = e.target.result;
+                    if(imgId === 'preview-img' || imgId === 'settings-preview-img') minhaFotoBase64 = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
-        }
-
-        function iniciarSistema() {
-            db.ref('usuarios').on('value', snapshot => {
-                const userList = document.getElementById('user-list');
-                userList.innerHTML = '';
-                snapshot.forEach(child => {
-                    if(child.key !== meuId) {
-                        const user = child.val();
-                        const li = document.createElement('li');
-                        li.className = 'user-item'; li.dataset.id = child.key; li.dataset.nome = user.nome;
-                        li.innerHTML = `<div class="avatar-container"><img src="${user.foto}" class="avatar"><div id="dot-${child.key}" class="status-dot offline"></div></div><div style="display:flex; flex-direction:column; flex-grow:1;"><div style="display:flex; align-items:center;"><span style="font-weight:bold;">${user.nome}</span><span class="device-info">(${user.dispositivo || 'PC'})</span></div></div><div id="unread-${child.key}" class="unread-badge">0</div>`;
-                        userList.appendChild(li);
-                        db.ref('status/' + child.key).on('value', s => { if(document.getElementById('dot-'+child.key)) document.getElementById('dot-'+child.key).className = 'status-dot ' + (s.val()==='online'?'online':'offline'); });
-                        const cp = [meuId, child.key].sort().join('_');
-                        db.ref('chats/' + cp).on('value', s => {
-                            let c = 0; s.forEach(m => { if(m.val().sender !== meuId && (!m.val().lido_por || !m.val().lido_por[meuId])) c++; });
-                            const b = document.getElementById('unread-' + child.key); if(b) { b.innerText = c; b.style.display = c > 0 ? 'flex' : 'none'; }
-                        });
-                    }
-                });
-            });
         }
 
         function abrirChat(id, nome) {
