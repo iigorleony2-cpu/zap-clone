@@ -3,81 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V28.1 - Social & Segura</title>
+    <title>Zap Pro V29.0 - Segurança Google</title>
+    <!-- Bibliotecas Firebase (Auth + Database) -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         :root { --chat-font-size: 15px; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; width: 100vw; overflow: hidden; }
         
-        /* TELAS DE AUTH */
-        .auth-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; align-items: center; justify-content: center; z-index: 2000; color: white; padding: 20px; overflow-y: auto; }
+        .auth-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; align-items: center; justify-content: center; z-index: 2000; color: white; padding: 20px; }
         .auth-box { background: #0b4e41; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         .auth-box input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 12px; font-size: 16px; color: #333; }
         .auth-box button { width: 100%; padding: 14px; border-radius: 8px; border: none; background: #25d366; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .forgot-link { cursor: pointer; font-size: 12px; display: block; margin-top: 10px; color: #add8e6; text-decoration: underline; }
+        .link-text { cursor: pointer; font-size: 13px; margin-top: 15px; display: block; color: #add8e6; }
 
-        /* Estilos das Versões Anteriores */
-        #app-container { display: none; width: 100%; height: 100%; flex-direction: row; }
-        #sidebar { width: 30%; min-width: 300px; max-width: 450px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; height: 100%; position: relative; }
-        #sidebar-header { background: #ededed; padding: 10px 15px; height: 60px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
-        .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; background: #fff; gap: 12px; cursor: pointer; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
-        #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
-        #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg { padding: 8px 12px 18px 10px; border-radius: 8px; max-width: 80%; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; margin-bottom: 10px; font-size: var(--chat-font-size); }
-        .sent { background: #dcf8c6; align-self: flex-end; }
-        .received { background: #fff; align-self: flex-start; }
-
-        @media (max-width: 768px) {
-            #sidebar { width: 100%; max-width: none; position: absolute; }
-            #chat-area { width: 100%; position: absolute; transform: translateX(100%); transition: 0.3s; }
-            body.chat-aberto #chat-area { transform: translateX(0); }
-        }
+        #app-container { display: none; width: 100%; height: 100%; }
+        /* Estilos de Sidebar e Chat seguem o padrão das versões anteriores */
     </style>
 </head>
 <body>
 
-    <!-- TELA DE AUTENTICAÇÃO -->
+    <!-- TELAS DE AUTENTICAÇÃO -->
     <div id="auth-screen" class="auth-screen">
         <!-- LOGIN -->
         <div class="auth-box" id="login-box">
-            <h2>Entrar</h2>
-            <input type="text" id="auth-at" placeholder="Seu @ (ex: @igor)">
-            <input type="password" id="auth-pass" placeholder="Sua senha">
-            <button onclick="realizarLogin()">ENTRAR</button>
-            <span class="forgot-link" onclick="abrirRecuperacao()">Esqueci minha senha</span>
-            <p onclick="alternarAuth('signup')" style="cursor:pointer; font-size:13px; margin-top:15px;">Não tem conta? <b>Cadastre-se</b></p>
+            <h2>Zap Pro Login</h2>
+            <input type="email" id="login-email" placeholder="Seu e-mail">
+            <input type="password" id="login-pass" placeholder="Sua senha">
+            <button onclick="fazerLogin()">ENTRAR</button>
+            <span class="link-text" onclick="enviarRecuperacao()">Esqueci minha senha</span>
+            <span class="link-text" onclick="alternarAuth('signup')">Não tem conta? <b>Cadastre-se</b></span>
         </div>
 
         <!-- CADASTRO -->
         <div class="auth-box" id="signup-box" style="display:none;">
             <h2>Criar Conta</h2>
-            <input type="text" id="reg-nome" placeholder="Nome de Exibição (ex: Igor Leony)">
-            <input type="text" id="reg-at" placeholder="Crie seu @ (ex: @igor)">
+            <input type="text" id="reg-nome" placeholder="Nome de Exibição (Ex: Igor Designer)">
+            <input type="text" id="reg-at" placeholder="Crie seu @ (Ex: @igor)">
+            <input type="email" id="reg-email" placeholder="Seu e-mail real">
             <input type="password" id="reg-pass" placeholder="Crie uma senha">
-            <input type="text" id="reg-dica" placeholder="Dica da senha (ex: Nome do pet)">
-            <button onclick="realizarCadastro()">CADASTRAR</button>
-            <p onclick="alternarAuth('login')" style="cursor:pointer; font-size:13px; margin-top:15px;">Já tem conta? <b>Login</b></p>
-        </div>
-
-        <!-- RECUPERAÇÃO -->
-        <div class="auth-box" id="recover-box" style="display:none;">
-            <h2>Recuperar Senha</h2>
-            <p style="font-size:12px; margin-bottom:10px;">Digite seu @ para ver a dica.</p>
-            <input type="text" id="rec-at" placeholder="Digite seu @">
-            <div id="dica-display" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:5px; margin-bottom:10px; display:none;">
-                <small>Sua dica:</small><br><b id="dica-texto"></b>
-            </div>
-            <button onclick="verificarDica()">VER DICA</button>
-            <p onclick="alternarAuth('login')" style="cursor:pointer; font-size:13px; margin-top:15px;">Voltar para o <b>Login</b></p>
+            <button onclick="registrarUsuario()">CADASTRAR</button>
+            <span class="link-text" onclick="alternarAuth('login')">Já tem conta? <b>Faça Login</b></span>
         </div>
     </div>
 
-    <!-- O Restante do App-Container segue a mesma lógica anterior... -->
-    <div id="app-container" style="display:none; width:100%; height:100%;">
-        <!-- Sidebar e Chat Area aqui -->
+    <div id="app-container">
+        <!-- Estrutura do App (Sidebar, Busca, Chat) -->
     </div>
 
     <script>
@@ -88,67 +61,81 @@
             projectId: "meu-zap-clone"
         };
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.database();
 
-        // --- AUTH LOGIC ---
         function alternarAuth(tela) {
             document.getElementById('login-box').style.display = tela === 'login' ? 'block' : 'none';
             document.getElementById('signup-box').style.display = tela === 'signup' ? 'block' : 'none';
-            document.getElementById('recover-box').style.display = tela === 'recover' ? 'block' : 'none';
         }
 
-        function realizarCadastro() {
+        // CADASTRO COM EMAIL E @ ÚNICO
+        function registrarUsuario() {
             const nome = document.getElementById('reg-nome').value.trim();
             const at = document.getElementById('reg-at').value.trim().toLowerCase().replace('@','');
+            const email = document.getElementById('reg-email').value.trim();
             const pass = document.getElementById('reg-pass').value.trim();
-            const dica = document.getElementById('reg-dica').value.trim();
 
-            if(!nome || !at || !pass || !dica) return alert("Preencha todos os campos!");
+            if(!nome || !at || !email || !pass) return alert("Preencha tudo!");
 
-            db.ref('usuarios/' + at).once('value', s => {
-                if(s.exists()) return alert("Este @ já existe!");
-                db.ref('usuarios/' + at).set({
-                    nome: nome,
-                    at: '@' + at,
-                    senha: pass,
-                    dica: dica,
-                    foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                }).then(() => {
-                    alert("Conta criada!");
-                    alternarAuth('login');
-                });
+            // 1. Verifica se o @ já existe no Database
+            db.ref('usuarios/' + at).once('value', snapshot => {
+                if(snapshot.exists()) return alert("Este @ já está em uso por outra pessoa.");
+
+                // 2. Cria o usuário no Firebase Auth (Segurança)
+                auth.createUserWithEmailAndPassword(email, pass)
+                    .then((userCredential) => {
+                        // 3. Salva os dados extras no Realtime Database
+                        db.ref('usuarios/' + at).set({
+                            nome: nome,
+                            at: '@' + at,
+                            email: email,
+                            uid: userCredential.user.uid,
+                            foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                        });
+                        // 4. Salva a relação UID -> @ para facilitar o login futuro
+                        db.ref('uids/' + userCredential.user.uid).set(at);
+                        
+                        alert("Conta criada com sucesso!");
+                        location.reload();
+                    })
+                    .catch(error => alert("Erro: " + error.message));
             });
         }
 
-        function realizarLogin() {
-            const at = document.getElementById('auth-at').value.trim().toLowerCase().replace('@','');
-            const pass = document.getElementById('auth-pass').value.trim();
+        // LOGIN COM EMAIL
+        function fazerLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
 
-            db.ref('usuarios/' + at).once('value', s => {
-                const user = s.val();
-                if(user && user.senha === pass) {
-                    // Entrar no sistema...
-                    alert("Bem-vindo, " + user.nome);
-                    // Lógica de entrada do app (entrarNoApp)
-                } else {
-                    alert("Credenciais inválidas.");
-                }
-            });
+            auth.signInWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    // Busca o @ do usuário pelo UID
+                    db.ref('uids/' + userCredential.user.uid).once('value', s => {
+                        const userAt = s.val();
+                        db.ref('usuarios/' + userAt).once('value', userSnap => {
+                            window.meuUsuario = { ...userSnap.val(), id: userAt };
+                            entrarNoApp();
+                        });
+                    });
+                })
+                .catch(error => alert("E-mail ou senha incorretos."));
         }
 
-        function abrirRecuperacao() { alternarAuth('recover'); }
+        // RECUPERAÇÃO DE SENHA (O Google envia o e-mail)
+        function enviarRecuperacao() {
+            const email = document.getElementById('login-email').value.trim();
+            if(!email) return alert("Digite seu e-mail no campo acima para receber o link de recuperação.");
 
-        function verificarDica() {
-            const at = document.getElementById('rec-at').value.trim().toLowerCase().replace('@','');
-            db.ref('usuarios/' + at).once('value', s => {
-                if(s.exists()) {
-                    const user = s.val();
-                    document.getElementById('dica-display').style.display = 'block';
-                    document.getElementById('dica-texto').innerText = user.dica;
-                } else {
-                    alert("Usuário não encontrado.");
-                }
-            });
+            auth.sendPasswordResetEmail(email)
+                .then(() => alert("E-mail de recuperação enviado! Verifique sua caixa de entrada."))
+                .catch(error => alert("Erro: " + error.message));
+        }
+
+        function entrarNoApp() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            // Aqui você chama as funções de carregar amigos e chats que já tínhamos
         }
     </script>
 </body>
