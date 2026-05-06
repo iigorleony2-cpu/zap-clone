@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V20 - Links & Fotos</title>
+    <title>Zap Pro V20.1 - Links Fix</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -36,12 +36,12 @@
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg-line { display: flex; align-items: center; margin-bottom: 8px; width: 100%; }
         .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
-        .sent { background: #dcf8c6; margin-left: auto; }
-        .received { background: #fff; margin-right: auto; }
+        .sent { background: #dcf8c6; align-self: flex-end; margin-left: auto; }
+        .received { background: #fff; align-self: flex-start; margin-right: auto; }
         .msg img { max-width: 100%; border-radius: 8px; display: block; margin: 5px 0; }
         
         /* Links clicáveis */
-        .msg a { color: #027eb5; text-decoration: underline; font-weight: 500; }
+        .msg a { color: #027eb5; text-decoration: underline; font-weight: bold; }
 
         #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; }
         #edit-banner { display: none; background: #dcf8c6; padding: 5px 15px; font-size: 12px; color: #075e54; font-weight: bold; }
@@ -134,13 +134,13 @@
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo, mediaRecorder, audioChunks = [], timerInterval, segundos = 0, gravacaoCancelada = false, idEditando = null;
 
-        // Função para transformar texto em link clicável
+        // FUNÇÃO CORRIGIDA PARA LINKS CLICÁVEIS
         function formatarLinks(texto) {
             if (!texto) return "";
             const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
             return texto.replace(urlRegex, (url) => {
                 let href = url.startsWith('http') ? url : 'http://' + url;
-                return `<a href="${href}" target="_blank">${url}</a>`;
+                return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
             });
         }
 
@@ -205,17 +205,41 @@
                 mList.innerHTML = '';
                 snapshot.forEach(child => {
                     const msg = child.val(); const isSent = msg.sender === meuId;
-                    const line = document.createElement('li'); line.className = 'msg-line ' + (isSent ? 'sent-line' : 'received-line');
-                    let content = "";
-                    if(msg.excluida) content = `<span style="font-style:italic;color:#888;">🚫 Apagada</span>`;
-                    else if(msg.tipo === 'foto') content = `<img src="${msg.arquivo}">`;
-                    else if(msg.tipo === 'audio') content = `<audio controls src="${msg.audio}"></audio>`;
-                    else content = formatarLinks(msg.texto);
+                    const line = document.createElement('li'); 
+                    line.className = 'msg-line';
+                    
+                    const divMsg = document.createElement('div');
+                    divMsg.className = 'msg ' + (isSent ? 'sent' : 'received');
 
-                    if(msg.editada && !msg.excluida) content += ` <small style="font-size:10px; color:#888;">(editada)</small>`;
+                    if(msg.excluida) {
+                        divMsg.innerHTML = `<span style="font-style:italic;color:#888;">🚫 Apagada</span>`;
+                    } else if(msg.tipo === 'foto') {
+                        divMsg.innerHTML = `<img src="${msg.arquivo}">`;
+                    } else if(msg.tipo === 'audio') {
+                        divMsg.innerHTML = `<audio controls src="${msg.audio}"></audio>`;
+                    } else {
+                        // AQUI USAMOS INNERHTML PARA O LINK FUNCIONAR
+                        divMsg.innerHTML = formatarLinks(msg.texto);
+                    }
 
-                    line.innerHTML = `<input type="checkbox" class="select-check" style="display:none; width:20px; height:20px; margin-right:10px;" data-id="${child.key}" data-texto="${msg.texto || ''}" data-tipo="${msg.tipo}">
-                                      <div class="msg ${isSent ? 'sent' : 'received'}">${content}</div>`;
+                    if(msg.editada && !msg.excluida) {
+                        divMsg.innerHTML += ` <small style="font-size:10px; color:#888;">(editada)</small>`;
+                    }
+
+                    const check = document.createElement('input');
+                    check.type = 'checkbox';
+                    check.className = 'select-check';
+                    check.style.display = 'none';
+                    check.style.width = '20px';
+                    check.style.height = '20px';
+                    check.style.marginRight = '10px';
+                    check.dataset.id = child.key;
+                    check.dataset.texto = msg.texto || '';
+                    check.dataset.tipo = msg.tipo;
+                    check.onchange = validarSelecao;
+
+                    if(isSent) line.appendChild(check);
+                    line.appendChild(divMsg);
                     mList.appendChild(line);
                 });
                 mList.scrollTop = mList.scrollHeight;
@@ -261,8 +285,14 @@
             document.querySelectorAll('.select-check').forEach(c => { c.style.display = 'none'; c.checked = false; });
         }
 
+        function validarSelecao() {
+            const sel = document.querySelectorAll('.select-check:checked');
+            document.getElementById('h-del').style.display = sel.length > 0 ? 'block' : 'none';
+            document.getElementById('h-correct').style.display = (sel.length === 1 && sel[0].dataset.tipo === 'texto') ? 'block' : 'none';
+        }
+
         function prepararCorrecao() {
-            const sel = document.querySelector('.sent-line .select-check:checked'); if(!sel) return alert("Selecione sua mensagem.");
+            const sel = document.querySelector('.select-check:checked'); if(!sel) return alert("Selecione sua mensagem.");
             idEditando = sel.dataset.id; document.getElementById('input').value = sel.dataset.texto;
             document.getElementById('edit-banner').style.display = 'block'; document.getElementById('input').focus(); desativarEdicao();
         }
@@ -270,7 +300,7 @@
         function cancelarEdicaoDirect() { idEditando = null; document.getElementById('input').value = ''; document.getElementById('edit-banner').style.display = 'none'; }
 
         function apagarSelecionadas() {
-            const sel = document.querySelectorAll('.sent-line .select-check:checked');
+            const sel = document.querySelectorAll('.select-check:checked');
             if (confirm(`Apagar ${sel.length} mensagens?`)) { sel.forEach(box => { db.ref('chats/' + chatAtivo + '/' + box.dataset.id).update({ excluida: true, texto: null, audio: null, arquivo: null }); }); desativarEdicao(); }
         }
 
