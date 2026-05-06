@@ -1,165 +1,56 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V29.1 - Apelido</title>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-    <style>
-        :root { --chat-font-size: 15px; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; width: 100vw; overflow: hidden; }
-        
-        /* AUTH SCREENS */
-        .auth-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; align-items: center; justify-content: center; z-index: 2000; color: white; padding: 20px; }
-        .auth-box { background: #0b4e41; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .auth-box input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 12px; font-size: 16px; color: #333; width: 100%; }
-        .auth-box button { width: 100%; padding: 14px; border-radius: 8px; border: none; background: #25d366; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        /* APP UI */
-        #app-container { display: none; width: 100%; height: 100%; flex-direction: row; }
-        #sidebar { width: 30%; min-width: 300px; max-width: 450px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; position: relative; }
-        
-        /* PAINEL CONFIGS */
-        #settings-panel { position: absolute; left: -100%; top: 0; width: 100%; height: 100%; background: #f0f2f5; z-index: 500; transition: 0.3s; display: flex; flex-direction: column; }
-        #settings-panel.open { left: 0; }
-        .settings-header { background: #008069; color: white; padding: 15px; display: flex; align-items: center; gap: 15px; }
+// FUNÇÃO PARA VALIDAR O @ ENQUANTO O USUÁRIO DIGITA
+document.getElementById('reg-at').addEventListener('input', function(e) {
+    // Remove espaços, converte para minúsculas e remove caracteres não permitidos
+    // Permite apenas: letras (a-z), números (0-9), ponto (.) e underline (_)
+    let valor = e.target.value.toLowerCase();
+    valor = valor.replace(/\s/g, ''); // Remove todos os espaços
+    valor = valor.replace(/[^a-z0-9._]/g, ''); // Remove caracteres especiais exceto . e _
+    e.target.value = valor;
+});
 
-        @media (max-width: 768px) {
-            #sidebar { width: 100%; max-width: none; }
-            #chat-area { width: 100%; position: absolute; transform: translateX(100%); transition: 0.3s; }
-            body.chat-aberto #chat-area { transform: translateX(0); }
-        }
-    </style>
-</head>
-<body>
+function registrarUsuario() {
+    const nome = document.getElementById('reg-nome').value.trim();
+    const atOriginal = document.getElementById('reg-at').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-pass').value.trim();
 
-    <!-- TELAS DE AUTH -->
-    <div id="auth-screen" class="auth-screen">
-        <div class="auth-box" id="login-box">
-            <h2>Zap Pro Login</h2>
-            <input type="email" id="login-email" placeholder="Seu e-mail">
-            <input type="password" id="login-pass" placeholder="Sua senha">
-            <button onclick="fazerLogin()">ENTRAR</button>
-            <p onclick="alternarAuth('signup')" style="cursor:pointer; font-size:13px; margin-top:15px;">Não tem conta? <b>Cadastre-se</b></p>
-        </div>
+    // Remove o símbolo @ caso o usuário tenha digitado manualmente para validar o ID no banco
+    const at = atOriginal.replace('@', '');
 
-        <div class="auth-box" id="signup-box" style="display:none;">
-            <h2>Criar Conta</h2>
-            <input type="text" id="reg-nome" placeholder="Apelido/Nome de exibição">
-            <input type="text" id="reg-at" placeholder="Crie seu @ (ex: @igor)">
-            <input type="email" id="reg-email" placeholder="Seu e-mail">
-            <input type="password" id="reg-pass" placeholder="Crie uma senha">
-            <button onclick="registrarUsuario()">CADASTRAR</button>
-            <p onclick="alternarAuth('login')" style="cursor:pointer; font-size:13px; margin-top:15px;">Já tem conta? <b>Login</b></p>
-        </div>
-    </div>
+    if(!nome || !at || !email || !pass) {
+        return alert("Por favor, preencha todos os campos obrigatórios.");
+    }
 
-    <!-- APP CONTAINER -->
-    <div id="app-container">
-        <div id="sidebar">
-            <!-- PAINEL CONFIGS -->
-            <div id="settings-panel">
-                <div class="settings-header">
-                    <span style="cursor:pointer;" onclick="toggleSettings()">❮</span>
-                    <span>Configurações de Perfil</span>
-                </div>
-                <div style="padding:20px;">
-                    <label style="font-size:12px; color:#008069; font-weight:bold;">NOME DE EXIBIÇÃO</label>
-                    <input type="text" id="set-nome-input" style="width:100%; border:none; border-bottom:2px solid #008069; padding:10px 0; margin-bottom:20px; font-size:16px; background:none;">
-                    
-                    <button onclick="salvarNovoApelido()" style="width:100%; padding:15px; background:#25d366; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR ALTERAÇÕES</button>
-                </div>
-            </div>
+    // Verificação extra de segurança para o formato do @
+    const regexAt = /^[a-z0-9._]+$/;
+    if(!regexAt.test(at)) {
+        return alert("O @ pode conter apenas letras minúsculas, números, ponto (.) ou underline (_).");
+    }
 
-            <div style="background:#ededed; padding:10px 15px; display:flex; align-items:center; justify-content:space-between; height:60px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <img id="minha-foto" src="" style="width:35px; height:35px; border-radius:50%; background:#ccc;">
-                    <span id="meu-nome-display" style="font-weight:bold;"></span>
-                </div>
-                <span style="cursor:pointer; font-size:20px;" onclick="toggleSettings()">⚙️</span>
-            </div>
-            <ul id="user-list" style="list-style:none; padding:0; margin:0; overflow-y:auto; flex-grow:1;"></ul>
-        </div>
-        <!-- Chat area seguindo as versões anteriores... -->
-    </div>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCcaX5fOlNx6OGdcGfTkFZ3UxnYS_uM9rU",
-            authDomain: "meu-zap-clone.firebaseapp.com",
-            databaseURL: "https://meu-zap-clone-default-rtdb.firebaseio.com/",
-            projectId: "meu-zap-clone"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        let meuUserAt = ""; 
-
-        function alternarAuth(tela) {
-            document.getElementById('login-box').style.display = tela === 'login' ? 'block' : 'none';
-            document.getElementById('signup-box').style.display = tela === 'signup' ? 'block' : 'none';
+    // 1. Verifica se o @ já existe no Database
+    db.ref('usuarios/' + at).once('value', snapshot => {
+        if(snapshot.exists()) {
+            return alert("Este @ já está em uso por outra pessoa.");
         }
 
-        function registrarUsuario() {
-            const nome = document.getElementById('reg-nome').value.trim();
-            const at = document.getElementById('reg-at').value.trim().toLowerCase().replace('@','');
-            const email = document.getElementById('reg-email').value.trim();
-            const pass = document.getElementById('reg-pass').value.trim();
-
-            if(!nome || !at || !email || !pass) return alert("Preencha tudo!");
-
-            db.ref('usuarios/' + at).once('value', snapshot => {
-                if(snapshot.exists()) return alert("Este @ já está em uso.");
-
-                auth.createUserWithEmailAndPassword(email, pass).then(res => {
-                    const dados = { nome: nome, at: '@'+at, email: email, uid: res.user.uid, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
-                    db.ref('usuarios/' + at).set(dados);
-                    db.ref('uids/' + res.user.uid).set(at);
-                    alert("Conta criada!");
-                    location.reload();
-                }).catch(e => alert(e.message));
-            });
-        }
-
-        function fazerLogin() {
-            const email = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
-            auth.signInWithEmailAndPassword(email, pass).then(res => {
-                db.ref('uids/' + res.user.uid).once('value', s => {
-                    meuUserAt = s.val();
-                    entrarNoApp();
+        // 2. Cria o usuário no Firebase Auth
+        auth.createUserWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                // 3. Salva os dados no Realtime Database
+                db.ref('usuarios/' + at).set({
+                    nome: nome,
+                    at: '@' + at,
+                    email: email,
+                    uid: userCredential.user.uid,
+                    foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                 });
-            }).catch(() => alert("Erro no login."));
-        }
-
-        function entrarNoApp() {
-            db.ref('usuarios/' + meuUserAt).on('value', s => {
-                const dados = s.val();
-                document.getElementById('meu-nome-display').innerText = dados.nome;
-                document.getElementById('minha-foto').src = dados.foto;
-                document.getElementById('set-nome-input').value = dados.nome;
-            });
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('app-container').style.display = 'flex';
-        }
-
-        function toggleSettings() {
-            document.getElementById('settings-panel').classList.toggle('open');
-        }
-
-        function salvarNovoApelido() {
-            const novoNome = document.getElementById('set-nome-input').value.trim();
-            if(!novoNome) return;
-            
-            db.ref('usuarios/' + meuUserAt).update({ nome: novoNome }).then(() => {
-                alert("Apelido atualizado!");
-                toggleSettings();
-            });
-        }
-    </script>
-</body>
-</html>
+                
+                // 4. Vincula o UID ao @
+                db.ref('uids/' + userCredential.user.uid).set(at);
+                
+                alert("Conta criada com sucesso!");
+                location.reload();
+            })
+            .catch(error => alert("Erro ao cadastrar: " + error.message));
+    });
+}
