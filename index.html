@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V7.1 - Correção</title>
+    <title>Zap Pro V8 - Mensagens Offline</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -18,28 +18,32 @@
         #login-foto { display: none; }
         #preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
 
-        /* APP CONTAINER */
+        /* APP */
         #app-container { display: none; width: 100%; height: 100%; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
         #sidebar-header { background: #ededed; padding: 10px 15px; font-weight: bold; height: 60px; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
         #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
-        .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; }
+        .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; position: relative; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
+        .status-indicator { width: 10px; height: 10px; border-radius: 50%; position: absolute; left: 45px; bottom: 12px; border: 2px solid white; }
+        .online { background: #25d366; }
+        .offline { background: #bbb; }
 
-        /* CHAT AREA */
+        /* CHAT */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
         #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
         .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; transition: 0.2s; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         .deleted-msg { font-style: italic; color: #8696a0; font-size: 13px; }
-        
-        .delete-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.05); display: none; border-radius: 8px; align-items: center; justify-content: center; }
-        .msg:hover .delete-overlay { display: flex; }
-        .btn-del-action { background: #ff3b30; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+
+        /* MENU DE EXCLUSÃO (TOQUE) */
+        .msg-options { display: none; position: absolute; top: -30px; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
+        .msg.show-options .msg-options { display: block; }
+        .btn-del { color: #ff3b30; border: none; background: none; font-size: 12px; cursor: pointer; font-weight: bold; }
 
         audio { max-width: 100%; height: 40px; margin-top: 5px; }
 
@@ -47,13 +51,12 @@
         #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; min-height: 65px; }
         #form { display: flex; align-items: center; width: 100%; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
+        .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         
         #recording-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 5; border-radius: 25px; }
         .rec-timer { color: #54656f; font-size: 16px; flex-grow: 1; margin-left: 15px; }
         .rec-dot { width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-        .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; }
@@ -86,7 +89,7 @@
                 <button class="back-btn" onclick="document.body.classList.remove('chat-aberto')">❮</button>
                 <span id="nome-contato">Selecione um contato</span>
             </div>
-            <ul id="messages"></ul>
+            <ul id="messages" onclick="fecharOpcoes()"></ul>
             
             <div id="footer-container" style="display: none;">
                 <form id="form">
@@ -150,17 +153,27 @@
                 minhaFotoBase64 = localStorage.getItem('zap_foto');
                 meuId = localStorage.getItem('zap_id');
             }
+
+            // Salva no banco de dados permanente
+            db.ref('usuarios/' + meuId).set({
+                nome: meuNome,
+                foto: minhaFotoBase64,
+                ultimoAcesso: Date.now()
+            });
+
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             iniciarSistema();
         }
 
         function iniciarSistema() {
-            const statusRef = db.ref('status/' + meuId);
-            statusRef.set({ nome: meuNome, foto: minhaFotoBase64, online: true });
+            // Monitora presença real
+            const statusRef = db.ref('online/' + meuId);
+            statusRef.set(true);
             statusRef.onDisconnect().remove();
 
-            db.ref('status').on('value', snapshot => {
+            // Lista TODOS os usuários (Online e Offline)
+            db.ref('usuarios').on('value', snapshot => {
                 const userList = document.getElementById('user-list');
                 userList.innerHTML = '';
                 snapshot.forEach(child => {
@@ -168,20 +181,29 @@
                         const user = child.val();
                         const li = document.createElement('li');
                         li.className = 'user-item';
-                        li.innerHTML = `<img src="${user.foto}" class="avatar"> <span>${user.nome}</span>`;
-                        // Correção: Forçar o clique para passar os IDs corretamente
-                        li.setAttribute('onclick', `abrirChat('${child.key}', '${user.nome}')`);
+                        li.innerHTML = `
+                            <img src="${user.foto}" class="avatar">
+                            <span>${user.nome}</span>
+                            <div class="status-indicator offline" id="status-${child.key}"></div>
+                        `;
+                        li.onclick = () => abrirChat(child.key, user.nome);
                         userList.appendChild(li);
                     }
+                });
+            });
+
+            // Atualiza indicadores de bolinha verde em tempo real
+            db.ref('online').on('value', snapshot => {
+                const onlines = snapshot.val() || {};
+                document.querySelectorAll('.status-indicator').forEach(el => {
+                    const id = el.id.replace('status-', '');
+                    el.className = 'status-indicator ' + (onlines[id] ? 'online' : 'offline');
                 });
             });
         }
 
         function abrirChat(idDestino, nomeDestino) {
-            // Recarrega o meuId para garantir que não está nulo
-            const idOrigem = localStorage.getItem('zap_id');
-            chatAtivo = [idOrigem, idDestino].sort().join('_');
-            
+            chatAtivo = [meuId, idDestino].sort().join('_');
             document.getElementById('nome-contato').innerText = nomeDestino;
             document.getElementById('footer-container').style.display = 'block';
             document.body.classList.add('chat-aberto');
@@ -190,7 +212,6 @@
 
         function carregarMensagens() {
             const mList = document.getElementById('messages');
-            const idUsuario = localStorage.getItem('zap_id');
             db.ref('chats/' + chatAtivo).off();
             db.ref('chats/' + chatAtivo).on('value', snapshot => {
                 mList.innerHTML = '';
@@ -198,7 +219,7 @@
                     const msg = child.val();
                     const msgId = child.key;
                     const li = document.createElement('li');
-                    li.className = 'msg ' + (msg.sender === idUsuario ? 'sent' : 'received');
+                    li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
                     
                     if(msg.excluida) {
                         li.innerHTML = `<span class="deleted-msg">🚫 Esta mensagem foi apagada</span>`;
@@ -208,11 +229,17 @@
                         } else {
                             li.textContent = msg.texto;
                         }
-                        if(msg.sender === idUsuario) {
-                            const overlay = document.createElement('div');
-                            overlay.className = 'delete-overlay';
-                            overlay.innerHTML = `<button class="btn-del-action" onclick="excluirParaTodos('${msgId}')">Apagar para todos</button>`;
-                            li.appendChild(overlay);
+                        
+                        if(msg.sender === meuId) {
+                            li.onclick = (e) => {
+                                e.stopPropagation();
+                                document.querySelectorAll('.msg').forEach(m => m.classList.remove('show-options'));
+                                li.classList.add('show-options');
+                            };
+                            const menu = document.createElement('div');
+                            menu.className = 'msg-options';
+                            menu.innerHTML = `<button class="btn-del" onclick="excluirParaTodos('${msgId}')">Apagar para todos</button>`;
+                            li.appendChild(menu);
                         }
                     }
                     mList.appendChild(li);
@@ -221,8 +248,12 @@
             });
         }
 
+        function fecharOpcoes() {
+            document.querySelectorAll('.msg').forEach(m => m.classList.remove('show-options'));
+        }
+
         function excluirParaTodos(msgId) {
-            if(confirm("Deseja apagar esta mensagem para todos?")) {
+            if(confirm("Apagar para todos?")) {
                 db.ref('chats/' + chatAtivo + '/' + msgId).update({
                     excluida: true,
                     texto: null,
@@ -234,14 +265,8 @@
         document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
             const input = document.getElementById('input');
-            const idEnvio = localStorage.getItem('zap_id');
             if (input.value.trim() && chatAtivo) {
-                db.ref('chats/' + chatAtivo).push({ 
-                    texto: input.value, 
-                    sender: idEnvio, 
-                    tipo: 'texto',
-                    excluida: false 
-                });
+                db.ref('chats/' + chatAtivo).push({ texto: input.value, sender: meuId, tipo: 'texto', excluida: false });
                 input.value = '';
             }
         });
@@ -257,13 +282,7 @@
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         const reader = new FileReader();
                         reader.onloadend = () => {
-                            const idEnvio = localStorage.getItem('zap_id');
-                            db.ref('chats/' + chatAtivo).push({ 
-                                audio: reader.result, 
-                                sender: idEnvio, 
-                                tipo: 'audio',
-                                excluida: false 
-                            });
+                            db.ref('chats/' + chatAtivo).push({ audio: reader.result, sender: meuId, tipo: 'audio', excluida: false });
                         };
                         reader.readAsDataURL(audioBlob);
                     }
@@ -280,18 +299,9 @@
             } catch (err) { alert("Permita o microfone."); }
         }
 
-        function cancelarGravacao() {
-            if (mediaRecorder) { audioChunks = []; mediaRecorder.stop(); fecharUIGravacao(); }
-        }
-
-        function pararESEnviar() {
-            if (mediaRecorder) { mediaRecorder.stop(); fecharUIGravacao(); }
-        }
-
-        function fecharUIGravacao() {
-            clearInterval(timerInterval);
-            document.getElementById('recording-ui').style.display = 'none';
-        }
+        function cancelarGravacao() { if (mediaRecorder) { audioChunks = []; mediaRecorder.stop(); fecharUIGravacao(); } }
+        function pararESEnviar() { if (mediaRecorder) { mediaRecorder.stop(); fecharUIGravacao(); } }
+        function fecharUIGravacao() { clearInterval(timerInterval); document.getElementById('recording-ui').style.display = 'none'; }
     </script>
 </body>
 </html>
