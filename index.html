@@ -3,63 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V13 - Emojis & Edição</title>
+    <title>Zap Pro V14</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* LOGIN */
         #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
         .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
         #login-screen input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; }
         
-        /* SIDEBAR */
+        #app-container { display: none; width: 100%; height: 100%; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
-        #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; border-bottom: 1px solid #ddd; height: 60px; display: flex; align-items: center; }
+        #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; height: 60px; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
         #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
         .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; background: #fff; width: 100%; position: relative; }
-        .user-item * { pointer-events: none; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; pointer-events: none; }
 
-        /* CHAT AREA */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; z-index: 20; }
         #chat-header { background: #ededed; padding: 0 10px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; justify-content: space-between; }
         .header-left { display: flex; align-items: center; flex-grow: 1; }
         .back-btn { background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 8px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; }
         
-        /* HEADER ACTIONS */
-        .header-btns { display: flex; align-items: center; gap: 5px; }
-        .btn-header { border: none; padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        /* BOTÕES HEADER */
+        .header-btns { display: flex; align-items: center; gap: 6px; }
+        .btn-h { border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .btn-correct { background: #25d366; color: white; display: none; }
+        .btn-del { background: #ff3b30; color: white; display: none; }
         .btn-edit-mode { background: #075e54; color: white; }
-        .btn-correct-now { background: #25d366; color: white; display: none; }
-        .btn-cancel-edit { background: #888; color: white; display: none; }
-        .btn-delete-now { background: #ff3b30; color: white; display: none; }
+        .btn-cancel { background: #888; color: white; display: none; }
 
-        /* MESSAGES */
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg-line { display: flex; align-items: center; margin-bottom: 8px; width: 100%; }
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .sent { background: #dcf8c6; margin-left: auto; }
         .received { background: #fff; margin-right: auto; }
         
-        /* MODO EDIÇÃO */
         .select-check { width: 22px; height: 22px; margin-right: 10px; display: none; accent-color: #075e54; flex-shrink: 0; }
         body.edit-mode .sent-line .select-check { display: block; }
         body.edit-mode .received-line { opacity: 0.5; }
 
-        /* RODAPÉ */
         #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; }
-        #edit-banner { display: none; background: #dcf8c6; padding: 5px 15px; font-size: 12px; color: #075e54; border-top: 1px solid #c9e2b3; font-weight: bold; }
-        #form { display: flex; align-items: center; }
+        #edit-label { display: none; background: #dcf8c6; padding: 5px 15px; font-size: 12px; color: #075e54; border-top: 1px solid #c9e2b3; font-weight: bold; }
+        #form { display: flex; align-items: center; gap: 5px; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; background: white; }
-        .btn-circle { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-        .btn-emoji { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: #54656f; }
+        .btn-circle { background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .btn-emoji-trigger { background: none; border: none; font-size: 24px; cursor: pointer; padding: 5px; }
         
-        /* GRAVAÇÃO */
         #recording-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 50; }
-        .timer-text { color: #ff3b30; font-weight: bold; flex-grow: 1; margin-left: 10px; }
+        .timer-text { color: red; font-weight: bold; flex-grow: 1; margin-left: 10px; }
 
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; }
@@ -76,9 +70,9 @@
             <h2>Zap Pro</h2>
             <img id="preview-img" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin:10px auto; border:3px solid #fff;">
             <input type="text" id="login-nome" placeholder="Seu nome">
-            <label style="display:block; background:#25d366; padding:12px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-weight:bold; text-align:center;" for="login-foto">📸 Escolher Foto</label>
+            <label style="display:block; background:#25d366; padding:12px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-weight:bold;" for="login-foto">📸 Foto de Perfil</label>
             <input type="file" id="login-foto" accept="image/*" style="display:none;" onchange="previewFoto(this)">
-            <button onclick="fazerLogin()" style="width:100%; padding:15px; border-radius:8px; border:none; background:#25d366; color:white; font-weight:bold; cursor:pointer;">ENTRAR</button>
+            <button onclick="fazerLogin()" style="width:100%; padding:15px; border-radius:8px; border:none; background:#25d366; color:white; font-weight:bold;">ENTRAR</button>
         </div>
     </div>
 
@@ -94,23 +88,23 @@
                     <span id="nome-contato">Selecione um contato</span>
                 </div>
                 <div class="header-btns" id="header-btns" style="display:none;">
-                    <button class="btn-header btn-correct-now" id="btn-correct" onclick="prepararCorrecao()">📝 Corrigir</button>
-                    <button class="btn-header btn-delete-now" id="btn-del" onclick="apagarSelecionadas()">🗑️ Apagar</button>
-                    <button class="btn-header btn-edit-mode" id="btn-pencil" onclick="ativarEdicao()">✏️</button>
-                    <button class="btn-header btn-cancel-edit" id="btn-cancel" onclick="desativarEdicao()">Cancelar</button>
+                    <button class="btn-h btn-correct" id="h-correct" onclick="prepararCorrecao()">📝 Corrigir</button>
+                    <button class="btn-h btn-del" id="h-del" onclick="apagarSelecionadas()">🗑️ Apagar</button>
+                    <button class="btn-h btn-edit-mode" id="h-pencil" onclick="ativarEdicao()">✏️</button>
+                    <button class="btn-h btn-cancel" id="h-cancel" onclick="desativarEdicao()">Sair</button>
                 </div>
             </div>
             <ul id="messages"></ul>
             <div id="footer-container" style="display: none;">
-                <div id="edit-banner">✏️ Corrigindo mensagem... <span onclick="cancelarEdicaoDirect()" style="float:right; cursor:pointer;">✖</span></div>
+                <div id="edit-label">✏️ Editando... <span onclick="cancelarEdicaoDirect()" style="float:right; cursor:pointer;">✖</span></div>
                 <form id="form" onsubmit="processarEnvio(event)">
-                    <button type="button" class="btn-emoji" onclick="abrirEmojis()">😊</button>
+                    <button type="button" class="btn-emoji-trigger" id="emoji-button">😊</button>
                     <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
                     <button type="submit" class="btn-circle">➤</button>
                     <button type="button" class="btn-circle" onclick="iniciarGravacao()">🎤</button>
                 </form>
                 <div id="recording-ui">
-                    <button style="background:none; border:none; font-size:24px; cursor:pointer;" onclick="cancelarGravacao()">🗑️</button>
+                    <button style="background:none; border:none; font-size:24px;" onclick="cancelarGravacao()">🗑️</button>
                     <div style="width:10px; height:10px; background:red; border-radius:50%; margin:0 10px; animation: blink 1s infinite;"></div>
                     <div id="timer-display" class="timer-text">0:00</div>
                     <button class="btn-circle" style="background:#00a884" onclick="pararESEnviar()">➤</button>
@@ -133,16 +127,18 @@
         const db = firebase.database();
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo, mediaRecorder, audioChunks = [], timerInterval, segundos = 0, gravacaoCancelada = false;
-        let idMensagemSendoCorrigida = null;
+        let idEditando = null;
+
+        // Iniciar Seletor de Emojis
+        const picker = new EmojiButton({ position: 'top-start' });
+        const trigger = document.querySelector('#emoji-button');
+        picker.on('emoji', selection => { document.querySelector('#input').value += selection; });
+        trigger.addEventListener('click', () => picker.togglePicker(trigger));
 
         function previewFoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = e => {
-                    const img = document.getElementById('preview-img');
-                    img.src = e.target.result; img.style.display = 'block';
-                    minhaFotoBase64 = e.target.result;
-                };
+                reader.onload = e => { const img = document.getElementById('preview-img'); img.src = e.target.result; img.style.display = 'block'; minhaFotoBase64 = e.target.result; };
                 reader.readAsDataURL(input.files[0]);
             }
         }
@@ -155,13 +151,9 @@
                 if(!meuNome) return alert("Digite seu nome!");
                 minhaFotoBase64 = minhaFotoBase64 || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
                 meuId = meuNome.toLowerCase().replace(/\s/g, '');
-                localStorage.setItem('zap_nome', meuNome);
-                localStorage.setItem('zap_foto', minhaFotoBase64);
-                localStorage.setItem('zap_id', meuId);
+                localStorage.setItem('zap_nome', meuNome); localStorage.setItem('zap_foto', minhaFotoBase64); localStorage.setItem('zap_id', meuId);
             } else {
-                meuNome = localStorage.getItem('zap_nome');
-                minhaFotoBase64 = localStorage.getItem('zap_foto');
-                meuId = localStorage.getItem('zap_id');
+                meuNome = localStorage.getItem('zap_nome'); minhaFotoBase64 = localStorage.getItem('zap_foto'); meuId = localStorage.getItem('zap_id');
             }
             db.ref('usuarios/' + meuId).set({ nome: meuNome, foto: minhaFotoBase64 });
             document.getElementById('login-screen').style.display = 'none';
@@ -170,20 +162,14 @@
         }
 
         function iniciarSistema() {
-            db.ref('online/' + meuId).set(true);
-            db.ref('online/' + meuId).onDisconnect().remove();
+            db.ref('online/' + meuId).set(true); db.ref('online/' + meuId).onDisconnect().remove();
             db.ref('usuarios').on('value', snapshot => {
-                const userList = document.getElementById('user-list');
-                userList.innerHTML = '';
+                const userList = document.getElementById('user-list'); userList.innerHTML = '';
                 snapshot.forEach(child => {
                     if(child.key !== meuId) {
                         const user = child.val();
-                        const li = document.createElement('li');
-                        li.className = 'user-item';
-                        li.setAttribute('data-id', child.key);
-                        li.setAttribute('data-nome', user.nome);
-                        li.innerHTML = `<img src="${user.foto}" class="avatar"><span>${user.nome}</span>`;
-                        userList.appendChild(li);
+                        const li = document.createElement('li'); li.className = 'user-item'; li.setAttribute('data-id', child.key); li.setAttribute('data-nome', user.nome);
+                        li.innerHTML = `<img src="${user.foto}" class="avatar"><span>${user.nome}</span>`; userList.appendChild(li);
                     }
                 });
             });
@@ -200,9 +186,7 @@
             document.getElementById('footer-container').style.display = 'block';
             document.getElementById('header-btns').style.display = 'flex';
             document.body.classList.add('chat-aberto');
-            desativarEdicao();
-            cancelarEdicaoDirect();
-            carregarMensagens();
+            desativarEdicao(); cancelarEdicaoDirect(); carregarMensagens();
         }
 
         function carregarMensagens() {
@@ -211,20 +195,13 @@
             db.ref('chats/' + chatAtivo).on('value', snapshot => {
                 mList.innerHTML = '';
                 snapshot.forEach(child => {
-                    const msg = child.val();
-                    const isSent = msg.sender === meuId;
-                    const line = document.createElement('li');
-                    line.className = 'msg-line ' + (isSent ? 'sent-line' : 'received-line');
-                    
+                    const msg = child.val(); const isSent = msg.sender === meuId;
+                    const line = document.createElement('li'); line.className = 'msg-line ' + (isSent ? 'sent-line' : 'received-line');
                     let content = msg.excluida ? `<span style="font-style:italic;color:#888;">🚫 Apagada</span>` : 
                                    (msg.tipo === 'audio' ? `<audio controls src="${msg.audio}"></audio>` : msg.texto);
-                    
                     if(msg.editada && !msg.excluida) content += ` <small style="font-size:10px; color:#888;">(editada)</small>`;
-
-                    line.innerHTML = `
-                        <input type="checkbox" class="select-check" data-id="${child.key}" data-texto="${msg.texto || ''}" data-tipo="${msg.tipo}" onchange="validarSelecao()">
-                        <div class="msg ${isSent ? 'sent' : 'received'}">${content}</div>
-                    `;
+                    line.innerHTML = `<input type="checkbox" class="select-check" data-id="${child.key}" data-texto="${msg.texto || ''}" data-tipo="${msg.tipo}" onchange="validarSelecao()">
+                                      <div class="msg ${isSent ? 'sent' : 'received'}">${content}</div>`;
                     mList.appendChild(line);
                 });
                 mList.scrollTop = mList.scrollHeight;
@@ -232,104 +209,43 @@
         }
 
         function validarSelecao() {
-            const selecionadas = document.querySelectorAll('.select-check:checked');
-            document.getElementById('btn-del').style.display = selecionadas.length > 0 ? 'block' : 'none';
-            // Corrigir só aparece se for EXATAMENTE 1 mensagem e for TEXTO
-            const podeCorrigir = selecionadas.length === 1 && selecionadas[0].dataset.tipo === 'texto';
-            document.getElementById('btn-correct').style.display = podeCorrigir ? 'block' : 'none';
+            const sel = document.querySelectorAll('.select-check:checked');
+            document.getElementById('h-del').style.display = sel.length > 0 ? 'block' : 'none';
+            document.getElementById('h-correct').style.display = (sel.length === 1 && sel[0].dataset.tipo === 'texto') ? 'block' : 'none';
         }
 
-        function ativarEdicao() {
-            document.body.classList.add('edit-mode');
-            document.getElementById('btn-pencil').style.display = 'none';
-            document.getElementById('btn-cancel').style.display = 'block';
-        }
-
-        function desativarEdicao() {
-            document.body.classList.remove('edit-mode');
-            document.getElementById('btn-pencil').style.display = 'block';
-            document.getElementById('btn-cancel').style.display = 'none';
-            document.getElementById('btn-del').style.display = 'none';
-            document.getElementById('btn-correct').style.display = 'none';
-            document.querySelectorAll('.select-check').forEach(c => c.checked = false);
-        }
+        function ativarEdicao() { document.body.classList.add('edit-mode'); document.getElementById('h-pencil').style.display = 'none'; document.getElementById('h-cancel').style.display = 'block'; }
+        function desativarEdicao() { document.body.classList.remove('edit-mode'); document.getElementById('h-pencil').style.display = 'block'; document.getElementById('h-cancel').style.display = 'none'; document.getElementById('h-del').style.display = 'none'; document.getElementById('h-correct').style.display = 'none'; document.querySelectorAll('.select-check').forEach(c => c.checked = false); }
 
         function prepararCorrecao() {
-            const selecionada = document.querySelector('.select-check:checked');
-            if(!selecionada) return;
-            idMensagemSendoCorrigida = selecionada.dataset.id;
-            document.getElementById('input').value = selecionada.dataset.texto;
-            document.getElementById('edit-banner').style.display = 'block';
-            document.getElementById('input').focus();
-            desativarEdicao();
+            const sel = document.querySelector('.select-check:checked'); if(!sel) return;
+            idEditando = sel.dataset.id; document.getElementById('input').value = sel.dataset.texto;
+            document.getElementById('edit-label').style.display = 'block'; document.getElementById('input').focus(); desativarEdicao();
         }
 
-        function cancelarEdicaoDirect() {
-            idMensagemSendoCorrigida = null;
-            document.getElementById('input').value = '';
-            document.getElementById('edit-banner').style.display = 'none';
-        }
-
-        function abrirEmojis() {
-            // Em dispositivos móveis, isso foca o campo e permite abrir o teclado de emojis nativo
-            document.getElementById('input').focus();
-        }
+        function cancelarEdicaoDirect() { idEditando = null; document.getElementById('input').value = ''; document.getElementById('edit-label').style.display = 'none'; }
 
         function processarEnvio(e) {
-            e.preventDefault();
-            const input = document.getElementById('input');
-            if (!input.value.trim() || !chatAtivo) return;
-
-            if (idMensagemSendoCorrigida) {
-                // ATUALIZAR MENSAGEM EXISTENTE
-                db.ref('chats/' + chatAtivo + '/' + idMensagemSendoCorrigida).update({
-                    texto: input.value,
-                    editada: true
-                });
-                cancelarEdicaoDirect();
-            } else {
-                // ENVIAR NOVA MENSAGEM
-                db.ref('chats/' + chatAtivo).push({ texto: input.value, sender: meuId, tipo: 'texto', excluida: false });
-                input.value = '';
-            }
+            e.preventDefault(); const input = document.getElementById('input'); if (!input.value.trim() || !chatAtivo) return;
+            if (idEditando) { db.ref('chats/' + chatAtivo + '/' + idEditando).update({ texto: input.value, editada: true }); cancelarEdicaoDirect(); }
+            else { db.ref('chats/' + chatAtivo).push({ texto: input.value, sender: meuId, tipo: 'texto', excluida: false }); input.value = ''; }
         }
 
         function apagarSelecionadas() {
-            const selecionadas = document.querySelectorAll('.sent-line .select-check:checked');
-            if (confirm(`Deseja apagar ${selecionadas.length} mensagens para todos?`)) {
-                selecionadas.forEach(box => {
-                    db.ref('chats/' + chatAtivo + '/' + box.dataset.id).update({ excluida: true, texto: null, audio: null });
-                });
-                desativarEdicao();
-            }
+            const sel = document.querySelectorAll('.sent-line .select-check:checked');
+            if (confirm(`Apagar ${sel.length} mensagens para todos?`)) { sel.forEach(box => { db.ref('chats/' + chatAtivo + '/' + box.dataset.id).update({ excluida: true, texto: null, audio: null }); }); desativarEdicao(); }
         }
 
         async function iniciarGravacao() {
-            if(idMensagemSendoCorrigida) return alert("Termine a correção primeiro!");
+            if(idEditando) return alert("Termine a edição primeiro!");
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = []; gravacaoCancelada = false;
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; gravacaoCancelada = false;
                 mediaRecorder.ondataavailable = e => { if (!gravacaoCancelada) audioChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                    if(!gravacaoCancelada && audioChunks.length > 0) {
-                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.onloadend = () => db.ref('chats/' + chatAtivo).push({ audio: reader.result, sender: meuId, tipo: 'audio', excluida: false });
-                        reader.readAsDataURL(blob);
-                    }
-                };
-                mediaRecorder.start();
-                document.getElementById('recording-ui').style.display = 'flex';
-                segundos = 0;
-                timerInterval = setInterval(() => {
-                    segundos++;
-                    const min = Math.floor(segundos/60); const seg = segundos%60;
-                    document.getElementById('timer-display').innerText = `${min}:${seg < 10 ? '0' : ''}${seg}`;
-                }, 1000);
+                mediaRecorder.onstop = () => { if(!gravacaoCancelada && audioChunks.length > 0) { const blob = new Blob(audioChunks, { type: 'audio/webm' }); const reader = new FileReader(); reader.onloadend = () => db.ref('chats/' + chatAtivo).push({ audio: reader.result, sender: meuId, tipo: 'audio', excluida: false }); reader.readAsDataURL(blob); } };
+                mediaRecorder.start(); document.getElementById('recording-ui').style.display = 'flex'; segundos = 0;
+                timerInterval = setInterval(() => { segundos++; const min = Math.floor(segundos/60); const seg = segundos%60; document.getElementById('timer-display').innerText = `${min}:${seg < 10 ? '0' : ''}${seg}`; }, 1000);
             } catch (err) { alert("Ative o microfone."); }
         }
-
         function cancelarGravacao() { if (mediaRecorder) { gravacaoCancelada = true; audioChunks = []; mediaRecorder.stop(); fecharUI(); } }
         function pararESEnviar() { if (mediaRecorder) { gravacaoCancelada = false; mediaRecorder.stop(); fecharUI(); } }
         function fecharUI() { clearInterval(timerInterval); document.getElementById('recording-ui').style.display = 'none'; }
