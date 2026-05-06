@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V9 - Áudio sob Demanda</title>
+    <title>Zap Pro V9.1 - Mobile Fix</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         /* LOGIN */
@@ -15,22 +15,37 @@
         .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
         #login-screen input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; }
         
-        /* APP E SIDEBAR */
-        #app-container { display: none; width: 100%; height: 100%; }
+        /* SIDEBAR */
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
         #sidebar-header { background: #ededed; padding: 10px 15px; font-weight: bold; height: 60px; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
         #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
-        .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; position: relative; width: 100%; background: #fff; }
-        .user-item * { pointer-events: none; }
+        
+        /* ITEM DA LISTA - MELHORADO PARA TOQUE */
+        .user-item { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #f2f2f2; 
+            display: flex; 
+            align-items: center; 
+            cursor: pointer; 
+            position: relative; 
+            background: #fff;
+            width: 100%;
+            user-select: none;
+            touch-action: pan-y; /* Permite rolar a lista, mas captura o clique */
+        }
+        .user-item:active { background: #f0f0f0; }
+        .user-item * { pointer-events: none; } /* Faz a foto/nome não atrapalharem o clique */
+
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
         .status-indicator { width: 10px; height: 10px; border-radius: 50%; position: absolute; left: 45px; bottom: 12px; border: 2px solid white; }
         .online { background: #25d366; }
         .offline { background: #bbb; }
 
-        /* CHAT */
-        #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
+        /* ÁREA DE CHAT */
+        #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; z-index: 20; }
         #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
         .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; }
+        
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .sent { background: #dcf8c6; align-self: flex-end; }
@@ -38,25 +53,25 @@
         .msg-options { display: none; position: absolute; top: -35px; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 50; }
         .msg.show-options .msg-options { display: block; }
 
-        /* RODAPÉ E GRAVAÇÃO */
+        /* RODAPÉ */
         #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; min-height: 65px; }
         #form { display: flex; align-items: center; width: 100%; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
         .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         
-        /* INTERFACE FLUTUANTE DE GRAVAÇÃO */
-        #recording-ui { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 5; 
-        }
-        .rec-timer { color: #ff3b30; font-weight: bold; font-size: 16px; flex-grow: 1; margin-left: 10px; }
-        .btn-stop { background: #ff3b30; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 14px; margin-right: 5px; }
-        .btn-cancel { background: none; border: none; color: #54656f; font-size: 24px; cursor: pointer; margin-right: 15px; }
+        /* INTERFACE DE GRAVAÇÃO */
+        #recording-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 50; }
+        .rec-timer { color: #ff3b30; font-weight: bold; flex-grow: 1; margin-left: 10px; }
 
+        /* AJUSTE MOBILE */
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; }
-            #chat-area { width: 100%; position: absolute; height: 100%; left: 100%; transition: 0.2s; }
-            body.chat-aberto #chat-area { left: 0; }
+            #chat-area { 
+                width: 100%; position: absolute; height: 100%; 
+                left: 0; transform: translateX(100%); 
+                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+            }
+            body.chat-aberto #chat-area { transform: translateX(0); }
             .back-btn { display: flex; align-items: center; justify-content: center; }
         }
     </style>
@@ -85,19 +100,16 @@
                 <span id="nome-contato">Selecione um contato</span>
             </div>
             <ul id="messages" onclick="fecharOpcoes()"></ul>
-            
             <div id="footer-container" style="display: none;">
                 <form id="form">
                     <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
                     <button type="submit" class="btn-icon">➤</button>
                     <button type="button" class="btn-icon" onclick="iniciarGravacao()">🎤</button>
                 </form>
-
                 <div id="recording-ui">
-                    <button class="btn-cancel" onclick="cancelarGravacao()">🗑️</button>
-                    <div style="width:10px; height:10px; background:red; border-radius:50%; animation: blink 1s infinite;"></div>
+                    <button style="background:none; border:none; font-size:22px;" onclick="cancelarGravacao()">🗑️</button>
+                    <div style="width:10px; height:10px; background:red; border-radius:50%; margin:0 10px;"></div>
                     <div id="timer-display" class="rec-timer">0:00</div>
-                    <button class="btn-stop" onclick="pararESEnviar()">Parar</button>
                     <button class="btn-icon" style="background:#00a884" onclick="pararESEnviar()">➤</button>
                 </div>
             </div>
@@ -166,11 +178,19 @@
                         const user = child.val();
                         const li = document.createElement('li');
                         li.className = 'user-item';
-                        li.innerHTML = `<img src="${user.foto}" class="avatar"><span>${user.nome}</span><div class="status-indicator offline" id="status-${child.key}"></div>`;
+                        li.dataset.uid = child.key;
+                        li.dataset.unome = user.nome;
+                        li.innerHTML = `
+                            <img src="${user.foto}" class="avatar">
+                            <span>${user.nome}</span>
+                            <div class="status-indicator offline" id="status-${child.key}"></div>
+                        `;
                         
-                        const trigger = (e) => { e.preventDefault(); abrirChat(child.key, user.nome); };
-                        li.addEventListener('mousedown', trigger);
-                        li.addEventListener('touchstart', trigger, {passive: false});
+                        // EVENTO DE TOQUE REFORÇADO
+                        li.addEventListener('click', function() {
+                            abrirChat(this.dataset.uid, this.dataset.unome);
+                        });
+
                         userList.appendChild(li);
                     }
                 });
@@ -239,7 +259,7 @@
             }
         });
 
-        // LÓGICA DE ÁUDIO SOB DEMANDA
+        // GRAVAÇÃO DE ÁUDIO
         async function iniciarGravacao() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -265,21 +285,11 @@
                     const seg = segundos % 60;
                     document.getElementById('timer-display').innerText = `${min}:${seg < 10 ? '0' : ''}${seg}`;
                 }, 1000);
-            } catch (err) { alert("Microfone bloqueado pelo navegador."); }
+            } catch (err) { alert("Microfone bloqueado."); }
         }
-
-        function cancelarGravacao() {
-            if (mediaRecorder) { audioChunks = []; mediaRecorder.stop(); fecharUIGravacao(); }
-        }
-
-        function pararESEnviar() {
-            if (mediaRecorder) { mediaRecorder.stop(); fecharUIGravacao(); }
-        }
-
-        function fecharUIGravacao() {
-            clearInterval(timerInterval);
-            document.getElementById('recording-ui').style.display = 'none';
-        }
+        function cancelarGravacao() { if (mediaRecorder) { audioChunks = []; mediaRecorder.stop(); fecharUIGravacao(); } }
+        function pararESEnviar() { if (mediaRecorder) { mediaRecorder.stop(); fecharUIGravacao(); } }
+        function fecharUIGravacao() { clearInterval(timerInterval); document.getElementById('recording-ui').style.display = 'none'; }
     </script>
 </body>
 </html>
