@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V5 - Final</title>
-    <!-- Firebase SDKs -->
+    <title>Zap Pro V7 - Excluir para Todos</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* TELA DE LOGIN */
+        /* LOGIN */
         #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
-        .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; outline: none; font-size: 16px; }
+        .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
+        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; outline: none; }
         .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
         #login-foto { display: none; }
         #preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
 
-        /* CONTAINER DO APP */
+        /* APP CONTAINER */
         #app-container { display: none; width: 100%; height: 100%; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
         #sidebar-header { background: #ededed; padding: 10px 15px; font-weight: bold; height: 60px; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
@@ -30,27 +29,40 @@
         /* CHAT AREA */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
         #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
-        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; }
+        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        
+        /* BALÕES DE MENSAGEM */
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; cursor: pointer; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
+        .deleted-msg { font-style: italic; color: #8696a0; font-size: 13px; }
+        
+        /* MENU DE EXCLUSÃO */
+        .delete-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.05); display: none; border-radius: 8px; align-items: center; justify-content: center; }
+        .msg:hover .delete-overlay { display: flex; }
+        .btn-del-action { background: #ff3b30; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+
         audio { max-width: 100%; height: 40px; margin-top: 5px; }
 
-        /* FOOTER COM TEXTO E ÁUDIO */
-        #form { display: flex; padding: 10px; background: #f0f0f0; align-items: center; border-top: 1px solid #ddd; }
+        /* FOOTER */
+        #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; min-height: 65px; }
+        #form { display: flex; align-items: center; width: 100%; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
-        .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; }
-        .btn-mic.recording { background: #ff3b30; animation: pulse 1s infinite; }
+        
+        /* UI GRAVAÇÃO */
+        #recording-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 5; border-radius: 25px; }
+        .rec-timer { color: #54656f; font-size: 16px; flex-grow: 1; margin-left: 15px; }
+        .rec-dot { width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .btn-delete-rec { background: none; color: #54656f; font-size: 22px; cursor: pointer; border: none; margin-right: 10px; }
 
-        /* RESPONSIVIDADE MOBILE */
         @media (max-width: 768px) {
-            #sidebar { width: 100%; position: absolute; height: 100%; transition: 0.3s; }
+            #sidebar { width: 100%; position: absolute; height: 100%; }
             #chat-area { width: 100%; position: absolute; height: 100%; left: 100%; transition: 0.3s; }
-            body.chat-aberto #sidebar { left: -100%; }
             body.chat-aberto #chat-area { left: 0; }
             .back-btn { display: flex; align-items: center; justify-content: center; }
         }
@@ -58,19 +70,17 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>Zap Pro</h2>
             <img id="preview-img" src="">
             <input type="text" id="login-nome" placeholder="Seu nome">
-            <label class="upload-label" for="login-foto">📸 Escolher Foto de Perfil</label>
+            <label class="upload-label" for="login-foto">📸 Foto de Perfil</label>
             <input type="file" id="login-foto" accept="image/*" onchange="previewFoto(this)">
             <button onclick="fazerLogin()" style="width: 100%; padding: 15px; border-radius: 8px; border: none; background: #25d366; color: white; font-weight: bold; cursor: pointer;">ENTRAR</button>
         </div>
     </div>
 
-    <!-- APP CONTAINER -->
     <div id="app-container">
         <div id="sidebar">
             <div id="sidebar-header">Conversas</div>
@@ -82,11 +92,21 @@
                 <span id="nome-contato">Selecione um contato</span>
             </div>
             <ul id="messages"></ul>
-            <form id="form" style="display: none;">
-                <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
-                <button type="submit" id="btn-enviar" class="btn-icon">➤</button>
-                <button type="button" id="btn-mic" class="btn-icon">🎤</button>
-            </form>
+            
+            <div id="footer-container" style="display: none;">
+                <form id="form">
+                    <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
+                    <button type="submit" id="btn-enviar" class="btn-icon">➤</button>
+                    <button type="button" id="btn-mic" class="btn-icon" onclick="iniciarGravacao()">🎤</button>
+                </form>
+
+                <div id="recording-ui">
+                    <button class="btn-delete-rec" onclick="cancelarGravacao()">🗑️</button>
+                    <div class="rec-dot"></div>
+                    <div class="rec-timer" id="timer-display">0:00</div>
+                    <button class="btn-icon" style="background:#00a884" onclick="pararESEnviar()">➤</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -104,7 +124,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let meuNome, minhaFotoBase64, meuId, chatAtivo, mediaRecorder, audioChunks = [];
+        let meuNome, minhaFotoBase64, meuId, chatAtivo, mediaRecorder, audioChunks = [], timerInterval, segundos = 0;
 
         function previewFoto(input) {
             if (input.files && input.files[0]) {
@@ -164,76 +184,114 @@
         function abrirChat(idDestino, nomeDestino) {
             chatAtivo = [meuId, idDestino].sort().join('_');
             document.getElementById('nome-contato').innerText = nomeDestino;
-            document.getElementById('form').style.display = 'flex';
+            document.getElementById('footer-container').style.display = 'block';
             document.body.classList.add('chat-aberto');
             carregarMensagens();
         }
 
         function carregarMensagens() {
             const mList = document.getElementById('messages');
-            mList.innerHTML = '';
             db.ref('chats/' + chatAtivo).off();
-            db.ref('chats/' + chatAtivo).on('child_added', s => {
-                const msg = s.val();
-                const li = document.createElement('li');
-                li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
-                
-                if(msg.tipo === 'audio') {
-                    li.innerHTML = `<audio controls src="${msg.audio}"></audio>`;
-                } else {
-                    li.textContent = msg.texto;
-                }
-                
-                mList.appendChild(li);
+            db.ref('chats/' + chatAtivo).on('value', snapshot => {
+                mList.innerHTML = '';
+                snapshot.forEach(child => {
+                    const msg = child.val();
+                    const msgId = child.key;
+                    const li = document.createElement('li');
+                    li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
+                    
+                    if(msg.excluida) {
+                        li.innerHTML = `<span class="deleted-msg">🚫 Esta mensagem foi apagada</span>`;
+                    } else {
+                        if(msg.tipo === 'audio') {
+                            li.innerHTML = `<audio controls src="${msg.audio}"></audio>`;
+                        } else {
+                            li.textContent = msg.texto;
+                        }
+                        
+                        // Opção de excluir apenas para quem enviou
+                        if(msg.sender === meuId) {
+                            const overlay = document.createElement('div');
+                            overlay.className = 'delete-overlay';
+                            overlay.innerHTML = `<button class="btn-del-action" onclick="excluirParaTodos('${msgId}')">Apagar para todos</button>`;
+                            li.appendChild(overlay);
+                        }
+                    }
+                    
+                    mList.appendChild(li);
+                });
                 mList.scrollTop = mList.scrollHeight;
             });
+        }
+
+        function excluirParaTodos(msgId) {
+            if(confirm("Deseja apagar esta mensagem para todos?")) {
+                db.ref('chats/' + chatAtivo + '/' + msgId).update({
+                    excluida: true,
+                    texto: null,
+                    audio: null
+                });
+            }
         }
 
         document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
             const input = document.getElementById('input');
             if (input.value.trim() && chatAtivo) {
-                db.ref('chats/' + chatAtivo).push({ texto: input.value, sender: meuId, tipo: 'texto' });
+                db.ref('chats/' + chatAtivo).push({ 
+                    texto: input.value, 
+                    sender: meuId, 
+                    tipo: 'texto',
+                    excluida: false 
+                });
                 input.value = '';
             }
         });
 
-        // LÓGICA DE ÁUDIO
-        const btnMic = document.getElementById('btn-mic');
-        
-        btnMic.addEventListener('mousedown', iniciarGravacao);
-        btnMic.addEventListener('touchstart', iniciarGravacao, {passive: false});
-
-        window.addEventListener('mouseup', pararGravacao);
-        window.addEventListener('touchend', pararGravacao);
-
-        async function iniciarGravacao(e) {
-            e.preventDefault();
+        async function iniciarGravacao() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        db.ref('chats/' + chatAtivo).push({ audio: reader.result, sender: meuId, tipo: 'audio' });
-                    };
-                    reader.readAsDataURL(audioBlob);
+                    if(audioChunks.length > 0) {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            db.ref('chats/' + chatAtivo).push({ 
+                                audio: reader.result, 
+                                sender: meuId, 
+                                tipo: 'audio',
+                                excluida: false 
+                            });
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    }
                 };
                 mediaRecorder.start();
-                btnMic.classList.add('recording');
-            } catch (err) {
-                alert("Erro ao acessar microfone. Verifique as permissões.");
-            }
+                document.getElementById('recording-ui').style.display = 'flex';
+                segundos = 0;
+                timerInterval = setInterval(() => {
+                    segundos++;
+                    const min = Math.floor(segundos / 60);
+                    const seg = segundos % 60;
+                    document.getElementById('timer-display').innerText = `${min}:${seg < 10 ? '0' : ''}${seg}`;
+                }, 1000);
+            } catch (err) { alert("Permita o microfone."); }
         }
 
-        function pararGravacao() {
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-                mediaRecorder.stop();
-                btnMic.classList.remove('recording');
-            }
+        function cancelarGravacao() {
+            if (mediaRecorder) { audioChunks = []; mediaRecorder.stop(); fecharUIGravacao(); }
+        }
+
+        function pararESEnviar() {
+            if (mediaRecorder) { mediaRecorder.stop(); fecharUIGravacao(); }
+        }
+
+        function fecharUIGravacao() {
+            clearInterval(timerInterval);
+            document.getElementById('recording-ui').style.display = 'none';
         }
     </script>
 </body>
