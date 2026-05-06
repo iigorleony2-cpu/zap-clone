@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V19.1 - Final GIF Fix</title>
+    <title>Zap Pro V20 - Links & Fotos</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
+        /* LOGIN */
         #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
         .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
         #login-screen input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; width: 100%; }
         
+        /* APP */
         #app-container { display: none; width: 100%; height: 100%; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
         #sidebar-header { background: #ededed; padding: 15px; font-weight: bold; height: 60px; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
@@ -21,6 +23,7 @@
         .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; background: #fff; width: 100%; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
 
+        /* CHAT AREA */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; z-index: 20; }
         #chat-header { background: #ededed; padding: 0 10px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; justify-content: space-between; }
         .header-left { display: flex; align-items: center; }
@@ -29,28 +32,24 @@
         .header-btns { display: flex; align-items: center; gap: 6px; }
         .btn-h { border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: bold; }
 
+        /* MENSAGENS */
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg-line { display: flex; align-items: center; margin-bottom: 8px; width: 100%; }
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .sent { background: #dcf8c6; margin-left: auto; }
         .received { background: #fff; margin-right: auto; }
+        .msg img { max-width: 100%; border-radius: 8px; display: block; margin: 5px 0; }
         
-        .sticker-msg { background: none !important; box-shadow: none !important; padding: 0 !important; }
-        .msg img { max-width: 150px; border-radius: 8px; display: block; }
+        /* Links clicáveis */
+        .msg a { color: #027eb5; text-decoration: underline; font-weight: 500; }
 
         #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; }
         #edit-banner { display: none; background: #dcf8c6; padding: 5px 15px; font-size: 12px; color: #075e54; font-weight: bold; }
-        #form { display: flex; align-items: center; gap: 5px; }
-        
-        /* CAMPO DE TEXTO ESPECIAL PARA ACEITAR GIFs DO TECLADO */
-        #input { 
-            flex-grow: 1; border: none; padding: 12px; border-radius: 20px; 
-            outline: none; font-size: 16px; background: white; 
-            max-height: 100px; overflow-y: auto; min-height: 42px;
-        }
+        #form { display: flex; align-items: center; gap: 8px; }
+        input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; background: white; }
         
         .btn-circle { background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-        .btn-media { background: none; border: none; font-size: 22px; cursor: pointer; color: #54656f; padding: 0 4px; display: flex; align-items: center; }
+        .btn-media { background: none; border: none; font-size: 22px; cursor: pointer; color: #54656f; display: flex; align-items: center; }
 
         #recording-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 50; }
         .timer-text { color: red; font-weight: bold; flex-grow: 1; margin-left: 10px; }
@@ -100,21 +99,20 @@
             <div id="footer-container" style="display: none;">
                 <div id="edit-banner">✏️ Corrigindo... <span onclick="cancelarEdicaoDirect()" style="float:right; cursor:pointer;">✖</span></div>
                 
-                <div id="form">
-                    <label class="btn-media">🖼️ <input type="file" accept="image/*" style="display:none" onchange="enviarArquivo(this, 'foto')"></label>
-                    <label class="btn-media">📷 <input type="file" accept="image/*" capture="environment" style="display:none" onchange="enviarArquivo(this, 'foto')"></label>
-                    <label class="btn-media">📂 <input type="file" accept="image/gif,image/png,image/webp" style="display:none" onchange="enviarArquivo(this, 'sticker')"></label>
+                <form id="form" onsubmit="processarEnvio(event)">
+                    <label class="btn-media" title="Galeria">🖼️ <input type="file" accept="image/*" style="display:none" onchange="enviarArquivo(this, 'foto')"></label>
+                    <label class="btn-media" title="Câmera">📷 <input type="file" accept="image/*" capture="environment" style="display:none" onchange="enviarArquivo(this, 'foto')"></label>
 
-                    <div id="input" contenteditable="true" placeholder="Digite uma mensagem..."></div>
+                    <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
                     
-                    <button class="btn-circle" onclick="processarEnvio()">➤</button>
-                    <button class="btn-circle" onclick="iniciarGravacao()">🎤</button>
-                </div>
+                    <button type="submit" class="btn-circle">➤</button>
+                    <button type="button" class="btn-circle" onclick="iniciarGravacao()">🎤</button>
+                </form>
 
                 <div id="recording-ui">
                     <button style="background:none; border:none; font-size:24px;" onclick="cancelarGravacao()">🗑️</button>
                     <div style="width:10px; height:10px; background:red; border-radius:50%; margin:0 10px; animation: blink 1s infinite;"></div>
-                    <div id="timer-display" class="timer-text">0:00</div>
+                    <div id="timer-display" style="color:red; font-weight:bold; flex-grow:1;">0:00</div>
                     <button class="btn-circle" style="background:#00a884" onclick="pararESEnviar()">➤</button>
                 </div>
             </div>
@@ -136,46 +134,16 @@
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo, mediaRecorder, audioChunks = [], timerInterval, segundos = 0, gravacaoCancelada = false, idEditando = null;
 
-        // --- LÓGICA DE INPUT RICO (GIFs do Teclado) ---
-        const inputDiv = document.getElementById('input');
-
-        inputDiv.addEventListener('paste', function(e) {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    e.preventDefault();
-                    const blob = items[i].getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        db.ref('chats/' + chatAtivo).push({ arquivo: event.target.result, sender: meuId, tipo: 'sticker', excluida: false });
-                    };
-                    reader.readAsDataURL(blob);
-                }
-            }
-        });
-
-        // Limpa formatação ao colar texto
-        inputDiv.addEventListener('paste', function(e) {
-            if (e.clipboardData.getData('text/plain')) {
-                e.preventDefault();
-                const text = e.clipboardData.getData('text/plain');
-                document.execCommand('insertText', false, text);
-            }
-        });
-
-        function processarEnvio() {
-            const texto = inputDiv.innerText.trim();
-            if (!texto && !idEditando) return;
-            if (idEditando) {
-                db.ref('chats/' + chatAtivo + '/' + idEditando).update({ texto: texto, editada: true });
-                cancelarEdicaoDirect();
-            } else {
-                db.ref('chats/' + chatAtivo).push({ texto: texto, sender: meuId, tipo: 'texto', excluida: false });
-            }
-            inputDiv.innerText = '';
+        // Função para transformar texto em link clicável
+        function formatarLinks(texto) {
+            if (!texto) return "";
+            const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+            return texto.replace(urlRegex, (url) => {
+                let href = url.startsWith('http') ? url : 'http://' + url;
+                return `<a href="${href}" target="_blank">${url}</a>`;
+            });
         }
 
-        // --- RESTANTE DAS FUNÇÕES ---
         function previewFoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -210,7 +178,7 @@
                     if(child.key !== meuId) {
                         const user = child.val();
                         const li = document.createElement('li'); li.className = 'user-item'; li.setAttribute('data-id', child.key); li.setAttribute('data-nome', user.nome);
-                        li.innerHTML = `<img src="${user.foto}" class="avatar" style="width:45px; height:45px; border-radius:50%; margin-right:15px; object-fit:cover;"><span>${user.nome}</span>`; userList.appendChild(li);
+                        li.innerHTML = `<img src="${user.foto}" class="avatar"><span>${user.nome}</span>`; userList.appendChild(li);
                     }
                 });
             });
@@ -238,16 +206,16 @@
                 snapshot.forEach(child => {
                     const msg = child.val(); const isSent = msg.sender === meuId;
                     const line = document.createElement('li'); line.className = 'msg-line ' + (isSent ? 'sent-line' : 'received-line');
-                    let msgClass = "msg " + (isSent ? "sent" : "received");
                     let content = "";
                     if(msg.excluida) content = `<span style="font-style:italic;color:#888;">🚫 Apagada</span>`;
-                    else if(msg.tipo === 'foto') { content = `<img src="${msg.arquivo}" style="max-width:100%; border-radius:8px;">`; }
-                    else if(msg.tipo === 'sticker') { msgClass += " sticker-msg"; content = `<img src="${msg.arquivo}">`; }
+                    else if(msg.tipo === 'foto') content = `<img src="${msg.arquivo}">`;
                     else if(msg.tipo === 'audio') content = `<audio controls src="${msg.audio}"></audio>`;
-                    else content = msg.texto;
+                    else content = formatarLinks(msg.texto);
+
                     if(msg.editada && !msg.excluida) content += ` <small style="font-size:10px; color:#888;">(editada)</small>`;
+
                     line.innerHTML = `<input type="checkbox" class="select-check" style="display:none; width:20px; height:20px; margin-right:10px;" data-id="${child.key}" data-texto="${msg.texto || ''}" data-tipo="${msg.tipo}">
-                                      <div class="${msgClass}">${content}</div>`;
+                                      <div class="msg ${isSent ? 'sent' : 'received'}">${content}</div>`;
                     mList.appendChild(line);
                 });
                 mList.scrollTop = mList.scrollHeight;
@@ -260,6 +228,19 @@
                 reader.onload = e => { db.ref('chats/' + chatAtivo).push({ arquivo: e.target.result, sender: meuId, tipo: tipo, excluida: false }); };
                 reader.readAsDataURL(input.files[0]); input.value = "";
             }
+        }
+
+        function processarEnvio(e) {
+            e.preventDefault(); const input = document.getElementById('input');
+            const texto = input.value.trim();
+            if (!texto && !idEditando) return;
+            if (idEditando) {
+                db.ref('chats/' + chatAtivo + '/' + idEditando).update({ texto: texto, editada: true });
+                cancelarEdicaoDirect();
+            } else {
+                db.ref('chats/' + chatAtivo).push({ texto: texto, sender: meuId, tipo: 'texto', excluida: false });
+            }
+            input.value = '';
         }
 
         function ativarEdicao() {
@@ -282,11 +263,11 @@
 
         function prepararCorrecao() {
             const sel = document.querySelector('.sent-line .select-check:checked'); if(!sel) return alert("Selecione sua mensagem.");
-            idEditando = sel.dataset.id; inputDiv.innerText = sel.dataset.texto;
-            document.getElementById('edit-banner').style.display = 'block'; inputDiv.focus(); desativarEdicao();
+            idEditando = sel.dataset.id; document.getElementById('input').value = sel.dataset.texto;
+            document.getElementById('edit-banner').style.display = 'block'; document.getElementById('input').focus(); desativarEdicao();
         }
 
-        function cancelarEdicaoDirect() { idEditando = null; inputDiv.innerText = ''; document.getElementById('edit-banner').style.display = 'none'; }
+        function cancelarEdicaoDirect() { idEditando = null; document.getElementById('input').value = ''; document.getElementById('edit-banner').style.display = 'none'; }
 
         function apagarSelecionadas() {
             const sel = document.querySelectorAll('.sent-line .select-check:checked');
