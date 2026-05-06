@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V23.1</title>
+    <title>Zap Pro V24 - Data e Hora</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -36,17 +36,17 @@
 
         /* MENSAGENS */
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg-line { display: flex; flex-direction: column; margin-bottom: 8px; width: 100%; }
-        .msg { padding: 6px 12px 14px 10px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; min-width: 80px; }
+        .msg-line { display: flex; flex-direction: column; margin-bottom: 12px; width: 100%; }
+        .msg { padding: 8px 12px 18px 10px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; min-width: 90px; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        /* HORÁRIO NO ESTILO WHATSAPP */
-        .msg-time { position: absolute; bottom: 3px; right: 7px; font-size: 10px; color: rgba(0, 0, 0, 0.45); display: flex; align-items: center; gap: 2px; }
+        /* DATA E HORÁRIO SEM CHECKS */
+        .msg-time { position: absolute; bottom: 3px; right: 8px; font-size: 9px; color: rgba(0, 0, 0, 0.45); font-weight: normal; }
         
-        /* EMOJI GRANDE */
-        .big-emoji { font-size: 55px; background: none !important; box-shadow: none !important; padding: 0 !important; min-width: auto; }
-        .big-emoji .msg-time { position: relative; bottom: 0; right: 0; margin-top: 5px; justify-content: flex-end; }
+        /* EMOJI GRANDE CORRIGIDO */
+        .big-emoji { font-size: 55px !important; background: none !important; box-shadow: none !important; padding: 0 !important; min-width: auto !important; }
+        .big-emoji .msg-time { position: relative; bottom: 0; right: 0; margin-top: 5px; text-align: right; display: block; }
 
         .msg img { max-width: 100%; border-radius: 8px; display: block; margin: 5px 0; }
         .msg a { color: #027eb5; text-decoration: underline; font-weight: bold; }
@@ -122,12 +122,12 @@
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo, idDestinoAtual;
 
-        // DETECTA SE A STRING É SÓ EMOJI (Melhorado)
+        // DETECÇÃO DE EMOJI ROBUSTA
         function apenasEmoji(str) {
             if (!str) return false;
-            // Remove espaços e verifica se restam apenas caracteres de emoji
             const limpo = str.replace(/\s/g, '');
-            const emojiRegExp = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])+$/g;
+            // Expressão regular atualizada para cobrir novos emojis
+            const emojiRegExp = /^(?:\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2000-\u3300]|\u00a9|\u00ae)+$/;
             return emojiRegExp.test(limpo);
         }
 
@@ -219,9 +219,8 @@
                     else if(msg.tipo === 'foto') content = `<img src="${msg.arquivo}">`;
                     else content = formatarLinks(msg.texto);
                     
-                    // CHECK DE LEITURA (Estilo whatsapp)
-                    const checkIcon = isSent ? ' <span style="color:#34b7f1;">✓✓</span>' : '';
-                    content += `<span class="msg-time">${msg.horario || ''}${checkIcon}</span>`;
+                    // EXIBIÇÃO DE DATA E HORA
+                    content += `<span class="msg-time">${msg.data_hora || ''}</span>`;
 
                     divMsg.innerHTML = content;
                     line.appendChild(divMsg);
@@ -238,14 +237,16 @@
             if(!texto) return;
 
             const agora = new Date();
-            const horario = agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            const dataHora = agora.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + 
+                             agora.getHours().toString().padStart(2, '0') + ':' + 
+                             agora.getMinutes().toString().padStart(2, '0');
 
             db.ref('chats/' + chatAtivo).push({ 
                 texto: texto, 
                 sender: meuId, 
                 tipo: 'texto', 
                 excluida: false,
-                horario: horario,
+                data_hora: dataHora,
                 timestamp: Date.now()
             });
             input.value = '';
@@ -255,8 +256,10 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 const agora = new Date();
-                const horario = agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
-                reader.onload = e => { db.ref('chats/' + chatAtivo).push({ arquivo: e.target.result, sender: meuId, tipo: tipo, excluida: false, horario: horario }); };
+                const dataHora = agora.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + 
+                                 agora.getHours().toString().padStart(2, '0') + ':' + 
+                                 agora.getMinutes().toString().padStart(2, '0');
+                reader.onload = e => { db.ref('chats/' + chatAtivo).push({ arquivo: e.target.result, sender: meuId, tipo: tipo, excluida: false, data_hora: dataHora }); };
                 reader.readAsDataURL(input.files[0]); input.value = "";
             }
         }
