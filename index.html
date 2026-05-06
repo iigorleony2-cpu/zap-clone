@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V7 - Excluir para Todos</title>
+    <title>Zap Pro V7.1 - Correção</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -32,14 +32,11 @@
         .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        
-        /* BALÕES DE MENSAGEM */
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; cursor: pointer; }
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         .deleted-msg { font-style: italic; color: #8696a0; font-size: 13px; }
         
-        /* MENU DE EXCLUSÃO */
         .delete-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.05); display: none; border-radius: 8px; align-items: center; justify-content: center; }
         .msg:hover .delete-overlay { display: flex; }
         .btn-del-action { background: #ff3b30; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
@@ -51,14 +48,12 @@
         #form { display: flex; align-items: center; width: 100%; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
         
-        /* UI GRAVAÇÃO */
         #recording-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; display: none; align-items: center; padding: 0 15px; z-index: 5; border-radius: 25px; }
         .rec-timer { color: #54656f; font-size: 16px; flex-grow: 1; margin-left: 15px; }
         .rec-dot { width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
         .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-        .btn-delete-rec { background: none; color: #54656f; font-size: 22px; cursor: pointer; border: none; margin-right: 10px; }
 
         @media (max-width: 768px) {
             #sidebar { width: 100%; position: absolute; height: 100%; }
@@ -101,7 +96,7 @@
                 </form>
 
                 <div id="recording-ui">
-                    <button class="btn-delete-rec" onclick="cancelarGravacao()">🗑️</button>
+                    <button style="background:none; border:none; font-size:22px; cursor:pointer;" onclick="cancelarGravacao()">🗑️</button>
                     <div class="rec-dot"></div>
                     <div class="rec-timer" id="timer-display">0:00</div>
                     <button class="btn-icon" style="background:#00a884" onclick="pararESEnviar()">➤</button>
@@ -174,7 +169,8 @@
                         const li = document.createElement('li');
                         li.className = 'user-item';
                         li.innerHTML = `<img src="${user.foto}" class="avatar"> <span>${user.nome}</span>`;
-                        li.onclick = () => abrirChat(child.key, user.nome);
+                        // Correção: Forçar o clique para passar os IDs corretamente
+                        li.setAttribute('onclick', `abrirChat('${child.key}', '${user.nome}')`);
                         userList.appendChild(li);
                     }
                 });
@@ -182,7 +178,10 @@
         }
 
         function abrirChat(idDestino, nomeDestino) {
-            chatAtivo = [meuId, idDestino].sort().join('_');
+            // Recarrega o meuId para garantir que não está nulo
+            const idOrigem = localStorage.getItem('zap_id');
+            chatAtivo = [idOrigem, idDestino].sort().join('_');
+            
             document.getElementById('nome-contato').innerText = nomeDestino;
             document.getElementById('footer-container').style.display = 'block';
             document.body.classList.add('chat-aberto');
@@ -191,6 +190,7 @@
 
         function carregarMensagens() {
             const mList = document.getElementById('messages');
+            const idUsuario = localStorage.getItem('zap_id');
             db.ref('chats/' + chatAtivo).off();
             db.ref('chats/' + chatAtivo).on('value', snapshot => {
                 mList.innerHTML = '';
@@ -198,7 +198,7 @@
                     const msg = child.val();
                     const msgId = child.key;
                     const li = document.createElement('li');
-                    li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
+                    li.className = 'msg ' + (msg.sender === idUsuario ? 'sent' : 'received');
                     
                     if(msg.excluida) {
                         li.innerHTML = `<span class="deleted-msg">🚫 Esta mensagem foi apagada</span>`;
@@ -208,16 +208,13 @@
                         } else {
                             li.textContent = msg.texto;
                         }
-                        
-                        // Opção de excluir apenas para quem enviou
-                        if(msg.sender === meuId) {
+                        if(msg.sender === idUsuario) {
                             const overlay = document.createElement('div');
                             overlay.className = 'delete-overlay';
                             overlay.innerHTML = `<button class="btn-del-action" onclick="excluirParaTodos('${msgId}')">Apagar para todos</button>`;
                             li.appendChild(overlay);
                         }
                     }
-                    
                     mList.appendChild(li);
                 });
                 mList.scrollTop = mList.scrollHeight;
@@ -237,10 +234,11 @@
         document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
             const input = document.getElementById('input');
+            const idEnvio = localStorage.getItem('zap_id');
             if (input.value.trim() && chatAtivo) {
                 db.ref('chats/' + chatAtivo).push({ 
                     texto: input.value, 
-                    sender: meuId, 
+                    sender: idEnvio, 
                     tipo: 'texto',
                     excluida: false 
                 });
@@ -259,9 +257,10 @@
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         const reader = new FileReader();
                         reader.onloadend = () => {
+                            const idEnvio = localStorage.getItem('zap_id');
                             db.ref('chats/' + chatAtivo).push({ 
                                 audio: reader.result, 
-                                sender: meuId, 
+                                sender: idEnvio, 
                                 tipo: 'audio',
                                 excluida: false 
                             });
