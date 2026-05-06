@@ -3,46 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro - Upload</title>
+    <title>Zap Pro - Versão Final</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Tela de Login */
+        /* TELA DE LOGIN */
         #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
-        .login-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
-        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; }
-        
-        /* Estilo do Botão de Upload */
-        .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
+        .login-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        #login-screen h2 { margin-top: 0; }
+        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; font-size: 16px; outline: none; }
+        .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+        .upload-label:hover { background: #1ebd59; }
         #login-foto { display: none; }
-        #preview-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
+        #preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
 
-        /* Estrutura do App */
+        /* ESTRUTURA PRINCIPAL */
         #app-container { display: none; width: 100%; height: 100%; }
-        #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        #sidebar-header { background: #075e54; color: white; padding: 15px; font-weight: bold; }
-        .user-item { padding: 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; }
+        
+        /* BARRA LATERAL */
+        #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
+        #sidebar-header { background: #075e54; color: white; padding: 15px; font-weight: bold; font-size: 18px; }
+        #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+        .user-item { padding: 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .user-item:hover { background: #f5f5f5; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
 
+        /* ÁREA DE CHAT */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
-        #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
-        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; }
+        #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; color: #333; }
+        
+        /* BOTÃO VOLTAR (MOBILE) */
+        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; line-height: 1; }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); font-size: 15px; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        #form { display: flex; padding: 10px; background: #f0f0f0; }
-        input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
-        #btn-enviar { background: #075e54; color: white; border: none; padding: 0 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; }
+        /* CAMPO DE ENTRADA */
+        #form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
+        #btn-enviar { background: #075e54; color: white; border: none; padding: 0 20px; margin-left: 8px; border-radius: 25px; cursor: pointer; font-weight: bold; }
 
+        /* RESPONSIVIDADE */
         @media (max-width: 768px) {
-            #sidebar { width: 100%; position: absolute; height: 100%; }
+            #sidebar { width: 100%; position: absolute; height: 100%; transition: 0.3s; }
             #chat-area { width: 100%; position: absolute; height: 100%; left: 100%; transition: 0.3s; }
+            body.chat-aberto #sidebar { left: -100%; }
             body.chat-aberto #chat-area { left: 0; }
             .back-btn { display: flex; align-items: center; justify-content: center; }
         }
@@ -50,11 +61,12 @@
 </head>
 <body>
 
+    <!-- TELA DE LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>Zap Pro</h2>
             <img id="preview-img" src="">
-            <input type="text" id="login-nome" placeholder="Seu nome">
+            <input type="text" id="login-nome" placeholder="Seu nome ou apelido">
             
             <label class="upload-label" for="login-foto">📸 Escolher Foto de Perfil</label>
             <input type="file" id="login-foto" accept="image/*" onchange="previewFoto(this)">
@@ -63,6 +75,7 @@
         </div>
     </div>
 
+    <!-- APP PRINCIPAL -->
     <div id="app-container">
         <div id="sidebar">
             <div id="sidebar-header">Conversas</div>
@@ -82,6 +95,7 @@
     </div>
 
     <script>
+        // CONFIGURAÇÃO DO SEU FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCcaX5fOlNx6OGdcGfTkFZ3UxnYS_uM9rU",
             authDomain: "meu-zap-clone.firebaseapp.com",
@@ -97,7 +111,12 @@
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo;
 
-        // Pré-visualização da foto
+        // Pedir permissão de notificação
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // Função para mostrar a foto antes de logar
         function previewFoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -105,20 +124,21 @@
                     const img = document.getElementById('preview-img');
                     img.src = e.target.result;
                     img.style.display = 'inline-block';
-                    minhaFotoBase64 = e.target.result; // Salva a imagem como texto
+                    minhaFotoBase64 = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
+        // Tentar login automático se já existir no navegador
         if(localStorage.getItem('zap_id')) {
             fazerLogin(true);
         }
 
         function fazerLogin(automatico = false) {
             if(!automatico) {
-                meuNome = document.getElementById('login-nome').value;
-                if(!meuNome) return alert("Digite seu nome!");
+                meuNome = document.getElementById('login-nome').value.trim();
+                if(!meuNome) return alert("Por favor, digite seu nome!");
                 
                 const fotoPadrao = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
                 minhaFotoBase64 = minhaFotoBase64 || fotoPadrao;
@@ -139,10 +159,12 @@
         }
 
         function iniciarSistema() {
+            // Define status online
             const statusRef = db.ref('status/' + meuId);
             statusRef.set({ nome: meuNome, foto: minhaFotoBase64, online: true });
             statusRef.onDisconnect().remove();
 
+            // Monitorar usuários online
             db.ref('status').on('value', snapshot => {
                 const userList = document.getElementById('user-list');
                 userList.innerHTML = '';
@@ -173,6 +195,12 @@
             db.ref('chats/' + chatAtivo).off();
             db.ref('chats/' + chatAtivo).on('child_added', s => {
                 const msg = s.val();
+                
+                // Notificação se a aba estiver escondida
+                if (msg.sender !== meuId && document.hidden) {
+                    new Notification("Nova mensagem de " + meuNome, { body: msg.texto });
+                }
+
                 const li = document.createElement('li');
                 li.className = 'msg ' + (msg.sender === meuId ? 'sent' : 'received');
                 li.textContent = msg.texto;
@@ -181,11 +209,16 @@
             });
         }
 
+        // Enviar Mensagem
         document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
             const input = document.getElementById('input');
             if (input.value.trim() && chatAtivo) {
-                db.ref('chats/' + chatAtivo).push({ texto: input.value, sender: meuId });
+                db.ref('chats/' + chatAtivo).push({
+                    texto: input.value,
+                    sender: meuId,
+                    timestamp: Date.now()
+                });
                 input.value = '';
             }
         });
