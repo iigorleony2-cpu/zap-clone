@@ -3,51 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V5 - Áudio</title>
+    <title>Zap Pro V5 - Final</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* LOGIN */
+        /* TELA DE LOGIN */
         #login-screen { position: fixed; top:0; left:0; width: 100%; height: 100%; background: #075e54; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
-        .login-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
-        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; }
+        .login-box { background: #0b4e41; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #login-screen input[type="text"] { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; outline: none; font-size: 16px; }
         .upload-label { display: block; background: #25d366; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
         #login-foto { display: none; }
         #preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; display: none; border: 3px solid #fff; }
 
-        /* APP */
+        /* CONTAINER DO APP */
         #app-container { display: none; width: 100%; height: 100%; }
-        #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
         #sidebar-header { background: #ededed; padding: 10px 15px; font-weight: bold; height: 60px; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
         #user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
         .user-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; display: flex; align-items: center; cursor: pointer; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #ccc; }
 
-        /* CHAT */
+        /* CHAT AREA */
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
         #chat-header { background: #ededed; padding: 10px 15px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ddd; height: 60px; }
-        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; }
+        .back-btn { display: none; background: #075e54; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-right: 12px; cursor: pointer; font-size: 18px; }
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
-        audio { max-width: 100%; height: 35px; margin-top: 5px; }
+        audio { max-width: 100%; height: 40px; margin-top: 5px; }
 
-        /* FOOTER COM ÁUDIO */
+        /* FOOTER COM TEXTO E ÁUDIO */
         #form { display: flex; padding: 10px; background: #f0f0f0; align-items: center; border-top: 1px solid #ddd; }
         input#input { flex-grow: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
-        .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .btn-icon { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; }
         .btn-mic.recording { background: #ff3b30; animation: pulse 1s infinite; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
+        /* RESPONSIVIDADE MOBILE */
         @media (max-width: 768px) {
-            #sidebar { width: 100%; position: absolute; height: 100%; }
+            #sidebar { width: 100%; position: absolute; height: 100%; transition: 0.3s; }
             #chat-area { width: 100%; position: absolute; height: 100%; left: 100%; transition: 0.3s; }
+            body.chat-aberto #sidebar { left: -100%; }
             body.chat-aberto #chat-area { left: 0; }
             .back-btn { display: flex; align-items: center; justify-content: center; }
         }
@@ -55,17 +58,19 @@
 </head>
 <body>
 
+    <!-- TELA DE LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>Zap Pro</h2>
             <img id="preview-img" src="">
             <input type="text" id="login-nome" placeholder="Seu nome">
-            <label class="upload-label" for="login-foto">📸 Foto de Perfil</label>
+            <label class="upload-label" for="login-foto">📸 Escolher Foto de Perfil</label>
             <input type="file" id="login-foto" accept="image/*" onchange="previewFoto(this)">
             <button onclick="fazerLogin()" style="width: 100%; padding: 15px; border-radius: 8px; border: none; background: #25d366; color: white; font-weight: bold; cursor: pointer;">ENTRAR</button>
         </div>
     </div>
 
+    <!-- APP CONTAINER -->
     <div id="app-container">
         <div id="sidebar">
             <div id="sidebar-header">Conversas</div>
@@ -184,7 +189,6 @@
             });
         }
 
-        // TEXTO
         document.getElementById('form').addEventListener('submit', e => {
             e.preventDefault();
             const input = document.getElementById('input');
@@ -194,31 +198,43 @@
             }
         });
 
-        // ÁUDIO (GRAVAÇÃO)
+        // LÓGICA DE ÁUDIO
         const btnMic = document.getElementById('btn-mic');
-        btnMic.addEventListener('mousedown', async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    db.ref('chats/' + chatAtivo).push({ audio: reader.result, sender: meuId, tipo: 'audio' });
-                };
-                reader.readAsDataURL(audioBlob);
-            };
-            mediaRecorder.start();
-            btnMic.classList.add('recording');
-        });
+        
+        btnMic.addEventListener('mousedown', iniciarGravacao);
+        btnMic.addEventListener('touchstart', iniciarGravacao, {passive: false});
 
-        window.addEventListener('mouseup', () => {
+        window.addEventListener('mouseup', pararGravacao);
+        window.addEventListener('touchend', pararGravacao);
+
+        async function iniciarGravacao(e) {
+            e.preventDefault();
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        db.ref('chats/' + chatAtivo).push({ audio: reader.result, sender: meuId, tipo: 'audio' });
+                    };
+                    reader.readAsDataURL(audioBlob);
+                };
+                mediaRecorder.start();
+                btnMic.classList.add('recording');
+            } catch (err) {
+                alert("Erro ao acessar microfone. Verifique as permissões.");
+            }
+        }
+
+        function pararGravacao() {
             if (mediaRecorder && mediaRecorder.state === "recording") {
                 mediaRecorder.stop();
                 btnMic.classList.remove('recording');
             }
-        });
+        }
     </script>
 </body>
 </html>
