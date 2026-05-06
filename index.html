@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V23.0</title>
+    <title>Zap Pro V23.1</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -37,16 +37,16 @@
         /* MENSAGENS */
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         .msg-line { display: flex; flex-direction: column; margin-bottom: 8px; width: 100%; }
-        .msg { padding: 6px 10px 18px 10px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; min-width: 60px; }
+        .msg { padding: 6px 12px 14px 10px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; min-width: 80px; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        /* HORÁRIO DENTRO DO BALÃO */
-        .msg-time { position: absolute; bottom: 3px; right: 7px; font-size: 10px; color: #888; }
+        /* HORÁRIO NO ESTILO WHATSAPP */
+        .msg-time { position: absolute; bottom: 3px; right: 7px; font-size: 10px; color: rgba(0, 0, 0, 0.45); display: flex; align-items: center; gap: 2px; }
         
         /* EMOJI GRANDE */
-        .big-emoji { font-size: 45px; background: none !important; box-shadow: none !important; padding: 0 !important; }
-        .big-emoji .msg-time { bottom: -15px; right: 0; }
+        .big-emoji { font-size: 55px; background: none !important; box-shadow: none !important; padding: 0 !important; min-width: auto; }
+        .big-emoji .msg-time { position: relative; bottom: 0; right: 0; margin-top: 5px; justify-content: flex-end; }
 
         .msg img { max-width: 100%; border-radius: 8px; display: block; margin: 5px 0; }
         .msg a { color: #027eb5; text-decoration: underline; font-weight: bold; }
@@ -92,24 +92,16 @@
                         <span id="status-contato" class="status-text"></span>
                     </div>
                 </div>
-                <div class="header-btns" id="header-btns" style="display:none;">
-                    <button class="btn-h" id="h-correct" style="background:#25d366; color:white; display:none; border:none; padding:8px 12px; border-radius:8px;" onclick="prepararCorrecao()">📝</button>
-                    <button class="btn-h" id="h-del" style="background:#ff3b30; color:white; display:none; border:none; padding:8px 12px; border-radius:8px;" onclick="apagarSelecionadas()">🗑️</button>
-                    <button class="btn-h" style="background:#075e54; color:white; border:none; padding:8px 12px; border-radius:8px;" id="h-pencil" onclick="ativarEdicao()">✏️</button>
-                    <button class="btn-h" style="background:#888; color:white; display:none; border:none; padding:8px 12px; border-radius:8px;" id="h-cancel" onclick="desativarEdicao()">Sair</button>
-                </div>
             </div>
 
             <ul id="messages"></ul>
 
             <div id="footer-container" style="display: none;">
-                <div id="edit-banner" style="display:none; background:#dcf8c6; padding:5px 15px; font-size:12px; color:#075e54;">✏️ Corrigindo... <span onclick="cancelarEdicaoDirect()" style="float:right; cursor:pointer;">✖</span></div>
                 <form id="form" onsubmit="processarEnvio(event)">
                     <label style="cursor:pointer; font-size:22px;">🖼️ <input type="file" accept="image/*" style="display:none" onchange="enviarArquivo(this, 'foto')"></label>
                     <label style="cursor:pointer; font-size:22px;">📷 <input type="file" accept="image/*" capture="environment" style="display:none" onchange="enviarArquivo(this, 'foto')"></label>
                     <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
                     <button type="submit" class="btn-circle">➤</button>
-                    <button type="button" class="btn-circle" onclick="iniciarGravacao()">🎤</button>
                 </form>
             </div>
         </div>
@@ -128,12 +120,15 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let meuNome, minhaFotoBase64, meuId, chatAtivo, idDestinoAtual, idEditando = null;
+        let meuNome, minhaFotoBase64, meuId, chatAtivo, idDestinoAtual;
 
-        // VERIFICA SE É SÓ EMOJI
+        // DETECTA SE A STRING É SÓ EMOJI (Melhorado)
         function apenasEmoji(str) {
+            if (!str) return false;
+            // Remove espaços e verifica se restam apenas caracteres de emoji
+            const limpo = str.replace(/\s/g, '');
             const emojiRegExp = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])+$/g;
-            return emojiRegExp.test(str.replace(/\s/g, ''));
+            return emojiRegExp.test(limpo);
         }
 
         function formatarLinks(texto) {
@@ -195,7 +190,6 @@
             chatAtivo = [meuId, idDestino].sort().join('_');
             document.getElementById('nome-contato').innerText = nomeDestino;
             document.getElementById('footer-container').style.display = 'block';
-            document.getElementById('header-btns').style.display = 'flex';
             document.body.classList.add('chat-aberto');
             marcarComoLidas();
             carregarMensagens();
@@ -217,20 +211,17 @@
                     const line = document.createElement('li'); line.className = 'msg-line';
                     const divMsg = document.createElement('div');
                     
-                    let content = "";
                     let isBigEmoji = (msg.tipo === 'texto' && apenasEmoji(msg.texto));
-
                     divMsg.className = 'msg ' + (isSent ? 'sent' : 'received') + (isBigEmoji ? ' big-emoji' : '');
 
+                    let content = "";
                     if(msg.excluida) content = `<span style="font-style:italic;color:#888;">🚫 Apagada</span>`;
                     else if(msg.tipo === 'foto') content = `<img src="${msg.arquivo}">`;
-                    else if(msg.tipo === 'audio') content = `<audio controls src="${msg.audio}"></audio>`;
                     else content = formatarLinks(msg.texto);
                     
-                    if(msg.editada && !msg.excluida) content += ` <small style="font-size:10px; color:#888;">(editada)</small>`;
-                    
-                    // Adiciona o horário
-                    content += `<span class="msg-time">${msg.horario || ''}</span>`;
+                    // CHECK DE LEITURA (Estilo whatsapp)
+                    const checkIcon = isSent ? ' <span style="color:#34b7f1;">✓✓</span>' : '';
+                    content += `<span class="msg-time">${msg.horario || ''}${checkIcon}</span>`;
 
                     divMsg.innerHTML = content;
                     line.appendChild(divMsg);
@@ -279,7 +270,6 @@
         }
         
         function detectarToque(e) { const it = e.target.closest('.user-item'); if(it) abrirChat(it.dataset.id, it.dataset.nome); }
-        // Outras funções de edição/exclusão podem ser readicionadas conforme as versões anteriores
     </script>
 </body>
 </html>
