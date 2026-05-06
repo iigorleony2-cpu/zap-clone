@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zap Pro V9.3 - Excluir Áudio</title>
+    <title>Zap Pro V9.4 - Long Press</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
@@ -33,18 +33,24 @@
         
         #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; list-style: none; margin: 0; }
         
-        /* BALÕES DE MENSAGEM */
-        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
+        /* BALÕES */
+        .msg { padding: 8px 12px; margin-bottom: 5px; border-radius: 8px; max-width: 85%; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; user-select: none; -webkit-user-select: none; }
         .sent { background: #dcf8c6; align-self: flex-end; }
         .received { background: #fff; align-self: flex-start; }
         
-        /* ÁUDIO CONTAINER: Permite clicar em volta para excluir */
-        .audio-wrapper { display: flex; flex-direction: column; cursor: pointer; min-width: 200px; }
-        audio { pointer-events: auto; } /* Permite dar play, mas o clique no balão ainda funciona */
-
-        /* MENU DE APAGAR */
-        .msg-options { display: none; position: absolute; top: -40px; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 100; }
+        /* MENU FLUTUANTE DE EXCLUSÃO */
+        .msg-options { 
+            display: none; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: white; border-radius: 12px; padding: 15px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000; 
+            min-width: 180px; text-align: center;
+        }
         .msg.show-options .msg-options { display: block; }
+        .btn-del-final { color: #ff3b30; border: none; background: #f2f2f2; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .audio-wrapper { display: flex; flex-direction: column; min-width: 200px; }
+        audio { pointer-events: auto; }
 
         /* FOOTER */
         #footer-container { background: #f0f0f0; padding: 10px; border-top: 1px solid #ddd; position: relative; }
@@ -62,7 +68,7 @@
         }
     </style>
 </head>
-<body>
+<body onclick="fecharOpcoes()">
 
     <div id="login-screen">
         <div class="login-box">
@@ -85,7 +91,7 @@
                 <button class="back-btn" onclick="document.body.classList.remove('chat-aberto')">❮</button>
                 <span id="nome-contato">Selecione um contato</span>
             </div>
-            <ul id="messages" onclick="fecharOpcoes()"></ul>
+            <ul id="messages"></ul>
             <div id="footer-container" style="display: none;">
                 <form id="form" onsubmit="enviarTexto(event)">
                     <input id="input" placeholder="Digite uma mensagem..." autocomplete="off">
@@ -116,6 +122,7 @@
         const db = firebase.database();
 
         let meuNome, minhaFotoBase64, meuId, chatAtivo, mediaRecorder, audioChunks = [], timerInterval, segundos = 0;
+        let pressTimer; // Temporizador para o toque longo
 
         function previewFoto(input) {
             if (input.files && input.files[0]) {
@@ -183,9 +190,7 @@
 
         function detectarToque(event) {
             const item = event.target.closest('.user-item');
-            if (item) {
-                abrirChat(item.getAttribute('data-id'), item.getAttribute('data-nome'));
-            }
+            if (item) abrirChat(item.getAttribute('data-id'), item.getAttribute('data-nome'));
         }
 
         function abrirChat(idDestino, nomeDestino) {
@@ -216,19 +221,25 @@
                             li.textContent = msg.texto;
                         }
 
-                        // LÓGICA DE CLIQUE PARA APAGAR (Funciona em áudio e texto)
                         if(msg.sender === meuId) {
-                            li.addEventListener('click', (e) => {
-                                // Se clicou no controle do áudio (play), não abre o menu
+                            // EVENTOS DE TOQUE LONGO
+                            const startPress = (e) => {
                                 if(e.target.tagName === 'AUDIO') return;
-                                e.stopPropagation();
-                                fecharOpcoes();
-                                li.classList.add('show-options');
-                            });
+                                pressTimer = setTimeout(() => {
+                                    fecharOpcoes();
+                                    li.classList.add('show-options');
+                                }, 600); // Tempo segurando: 600ms
+                            };
+                            const endPress = () => clearTimeout(pressTimer);
+
+                            li.addEventListener('mousedown', startPress);
+                            li.addEventListener('mouseup', endPress);
+                            li.addEventListener('touchstart', startPress);
+                            li.addEventListener('touchend', endPress);
                             
                             const menu = document.createElement('div');
                             menu.className = 'msg-options';
-                            menu.innerHTML = `<button style="color:red; border:none; background:none; font-weight:bold; cursor:pointer;" onclick="excluirParaTodos(event, '${msgId}')">Apagar para todos</button>`;
+                            menu.innerHTML = `<button class="btn-del-final" onclick="excluirParaTodos(event, '${msgId}')">Apagar para todos</button>`;
                             li.appendChild(menu);
                         }
                     }
@@ -242,7 +253,7 @@
         
         function excluirParaTodos(e, msgId) {
             e.stopPropagation();
-            if(confirm("Apagar mensagem para todos?")) {
+            if(confirm("Apagar para todos?")) {
                 db.ref('chats/' + chatAtivo + '/' + msgId).update({ excluida: true, texto: null, audio: null });
             }
             fecharOpcoes();
